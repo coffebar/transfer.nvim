@@ -1,7 +1,22 @@
 local M = {}
 
 M.defaults = {
-  --
+  config_template = [[
+return {
+  ["server1"] = {
+    host = "server1",
+    mappings = {
+      {
+        ["local"] = "domains/example.com",
+        ["remote"] = "/var/www/example.com",
+      },
+    },
+    -- excludedPaths = {
+    --   "src",
+    -- },
+  },
+}
+]],
 }
 
 M.options = {}
