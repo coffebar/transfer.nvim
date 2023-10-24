@@ -17,6 +17,7 @@ return {
   },
 }
 ]],
+  close_diffview_mapping = "<leader>b",
 }
 
 M.options = {}
