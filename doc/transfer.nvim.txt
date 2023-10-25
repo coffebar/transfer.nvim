@@ -1,0 +1,143 @@
+*transfer.nvim.txt*              For              Last change: 2023 October 25
+
+==============================================================================
+Table of Contents                            *transfer.nvim-table-of-contents*
+
+1. transfer.nvim                                 |transfer.nvim-transfer.nvim|
+  - Description                      |transfer.nvim-transfer.nvim-description|
+  - Install                              |transfer.nvim-transfer.nvim-install|
+  - Commands                            |transfer.nvim-transfer.nvim-commands|
+  - Deployment config example|transfer.nvim-transfer.nvim-deployment-config-example|
+  - Suggested mappings        |transfer.nvim-transfer.nvim-suggested-mappings|
+
+==============================================================================
+1. transfer.nvim                                 *transfer.nvim-transfer.nvim*
+
+
+DESCRIPTION                          *transfer.nvim-transfer.nvim-description*
+
+Transfer.nvim is a Neovim plugin for syncing files with remote server using
+rsync and OpenSSH.
+
+It supports mapping multiple local and remote paths, excluded path, and more.
+
+
+INSTALL                                  *transfer.nvim-transfer.nvim-install*
+
+
+LAZY.NVIM ~
+
+>lua
+    {
+        "coffebar/transfer.nvim",
+        lazy = true,
+        cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff" },
+        opts = {},
+    },
+<
+
+
+
+COMMANDS                                *transfer.nvim-transfer.nvim-commands*
+
+- `TransferInit` - create a config file and open it. Just edit if it already exists
+- `DiffRemote` - open a diff view with the remote file
+- `TransferUpload [path]` - upload the given file or directory
+- `TransferDownload [path]` - download the given file or directory
+- `TransferDirDiff [path]` - diff the current directory with the remote one (show changed files in qf window)
+
+
+DEPLOYMENT CONFIG EXAMPLE*transfer.nvim-transfer.nvim-deployment-config-example*
+
+>lua
+    {
+      ["example_name"] = {
+        host = "myhost",
+        username = "web", -- optional
+        port = 9202, -- optional
+        mappings = {
+          {
+            ["local"] = "live",
+            ["remote"] = "/var/www/example.com",
+          },
+          {
+            ["local"] = "test",
+            ["remote"] = "/var/www/test.example.com",
+          },
+        },
+        excludedPaths = { -- optional
+          "src",
+        },
+      },
+    }
+<
+
+Example `~/.ssh/config` for passwordless auth:
+
+>ssh
+    Host myhost
+      HostName 127.1.177.12
+      User web
+      IdentityFile ~/.ssh/myhost_key
+    
+    Host server2
+      ...
+<
+
+
+SUGGESTED MAPPINGS            *transfer.nvim-transfer.nvim-suggested-mappings*
+
+
+NEO-TREE ~
+
+>lua
+    {
+        window = {
+            mappings = {
+                -- upload (sync files)
+                uu = {
+                    function(state)
+                        vim.cmd("TransferUpload " .. state.tree:get_node().path)
+                        end,
+                    desc = "upload file or directory",
+                    nowait = true,
+                },
+                -- download (sync files)
+                ud = {
+                    function(state)
+                        vim.cmd("TransferDownload" .. state.tree:get_node().path)
+                        end,
+                    desc = "download file or directory",
+                    nowait = true,
+                },
+                -- diff directory with remote
+                ["<c-d>"] = {
+                    function(state)
+                        vim.cmd("TransferDirDiff " .. state.tree:get_node().path)
+                        vim.cmd("Neotree close")
+                        end,
+                    desc = "diff with remote",
+                },
+            }
+        }
+    }
+<
+
+
+WHICH-KEY ~
+
+>lua
+    wk.register({
+        ["<leader>"] = {
+          u = {
+            name = "Upload / Download",
+            d = { "<cmd>TransferDownload<cr>", "Download from remote server (scp)" },
+            u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
+            f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
+            i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
+          },
+        }
+    })
+<
+
+vim:tw=78:ts=8:noet:ft=help:norl:
