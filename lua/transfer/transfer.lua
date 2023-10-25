@@ -10,7 +10,9 @@ local function reload_buffer(bufnr)
   local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
   if filetype == "neo-tree" then
     local installed, neo_tree_command = pcall(require, "neo-tree.command")
-    neo_tree_command.execute({ action = "refresh" })
+    if installed then
+      neo_tree_command.execute({ action = "refresh" })
+    end
     return
   end
   if vim.api.nvim_buf_is_valid(bufnr) then
