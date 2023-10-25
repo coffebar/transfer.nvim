@@ -58,6 +58,18 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 }
 ```
 
+Example `~/.ssh/config` for passwordless auth:
+
+```ssh
+Host myhost
+  HostName 127.1.177.12
+  User web
+  IdentityFile ~/.ssh/myhost_key
+
+Host server2
+  ...
+```
+
 ## Suggested mappings
 
 ### Neo-tree
