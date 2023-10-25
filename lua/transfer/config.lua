@@ -18,6 +18,28 @@ return {
 }
 ]],
   close_diffview_mapping = "<leader>b",
+  upload_rsync_params = {
+    "-rlzi",
+    "--delete",
+    "--checksum",
+    "--exclude",
+    ".git",
+    "--exclude",
+    ".idea",
+    "--exclude",
+    ".DS_Store",
+    "--exclude",
+    ".nvim",
+    "--exclude",
+    "*.pyc",
+  },
+  download_rsync_params = {
+    "-rlzi",
+    "--delete",
+    "--checksum",
+    "--exclude",
+    ".git",
+  },
 }
 
 M.options = {}

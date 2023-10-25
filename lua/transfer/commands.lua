@@ -1,7 +1,7 @@
 local M = {}
 
 M.setup = function()
-  -- add command to create a config file and open it
+  -- TransferInit - create a config file and open it. Just edit if it already exists
   vim.api.nvim_create_user_command("TransferInit", function()
     local config = require("transfer.config")
     local template = config.options.config_template
@@ -16,6 +16,7 @@ M.setup = function()
     vim.cmd("edit " .. path)
   end, { nargs = 0 })
 
+  -- DiffRemote - open a diff view with the remote file
   vim.api.nvim_create_user_command("DiffRemote", function()
     local local_path = vim.fn.expand("%:p")
     local remote_path = require("transfer.transfer").remote_scp_path(local_path)
@@ -39,7 +40,49 @@ M.setup = function()
     vim.api.nvim_command("silent! diffsplit " .. remote_path)
   end, { nargs = 0 })
 
-  -- TODO: create more commands here
+  -- TransferUpload - upload the given file or directory
+  vim.api.nvim_create_user_command("TransferUpload", function(opts)
+    local path
+    if opts ~= nil and opts.args then
+      path = opts.args
+    end
+    if path == nil or path == "" then
+      path = vim.fn.expand("%:p")
+    end
+    if vim.fn.isdirectory(path) == 1 then
+      require("transfer.transfer").sync_dir(path, true)
+    else
+      require("transfer.transfer").upload_file(path)
+    end
+  end, { nargs = "?" })
+
+  -- TransferDownload - download the given file or directory
+  vim.api.nvim_create_user_command("TransferDownload", function(opts)
+    local path
+    if opts ~= nil and opts.args then
+      path = opts.args
+    end
+    if path == nil or path == "" then
+      path = vim.fn.expand("%:p")
+    end
+    if vim.fn.isdirectory(path) == 1 then
+      require("transfer.transfer").sync_dir(path, false)
+    else
+      require("transfer.transfer").download_file(path)
+    end
+  end, { nargs = "?" })
+
+  -- TransferDirDiff - show changed files between local and remote directory
+  vim.api.nvim_create_user_command("TransferDirDiff", function(opts)
+    local path
+    if opts ~= nil and opts.args then
+      path = opts.args
+    end
+    if path == nil or path == "" then
+      path = vim.fn.expand("%:p")
+    end
+    require("transfer.transfer").show_dir_diff(path)
+  end, { nargs = "?" })
 end
 
 return M
