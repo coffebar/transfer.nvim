@@ -2,7 +2,7 @@
 
 ## Description
 
-Transfer.nvim is a plugin for syncing files with remote server using rsync and OpenSSH.
+Transfer.nvim is a Neovim plugin for syncing files with remote server using rsync and OpenSSH.
 
 It supports mapping multiple local and remote paths, excluded path, and more.
 
@@ -33,6 +33,30 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 - `TransferDownload [path]` - download the given file or directory
 - `TransferDirDiff [path]` - diff the current directory with the remote one (show changed files in qf window)
 
+## Deployment config example
+
+```lua
+{
+  ["example_name"] = {
+    host = "myhost",
+    username = "web", -- optional
+    port = 9202, -- optional
+    mappings = {
+      {
+        ["local"] = "live",
+        ["remote"] = "/var/www/example.com",
+      },
+      {
+        ["local"] = "test",
+        ["remote"] = "/var/www/test.example.com",
+      },
+    },
+    excludedPaths = { -- optional
+      "src",
+    },
+  },
+}
+```
 
 ## Suggested mappings
 
@@ -87,9 +111,9 @@ wk.register({
 })
 ```
 
-## Migration from IDEA config
+## Migration from JetBrains config
 
-[Check this repo](https://github.com/coffebar/jetbrains-deployment-config-to-lua) for converting you config from jetbrains projects.
+[Check this repo](https://github.com/coffebar/jetbrains-deployment-config-to-lua) for converting you config from JetBrains projects.
 
 ## Config
 
