@@ -1,6 +1,7 @@
 local M = {}
 
 M.defaults = {
+  -- deployment config template: can be a string, a function or a table of lines
   config_template = [[
 return {
   ["server1"] = {
@@ -17,7 +18,7 @@ return {
   },
 }
 ]],
-  close_diffview_mapping = "<leader>b",
+  close_diffview_mapping = "<leader>b", -- buffer related mapping to close diffview, set to nil to disable mapping
   upload_rsync_params = {
     "-rlzi",
     "--delete",

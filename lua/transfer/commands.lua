@@ -5,13 +5,21 @@ M.setup = function()
   vim.api.nvim_create_user_command("TransferInit", function()
     local config = require("transfer.config")
     local template = config.options.config_template
+    -- if template is a function, call it
+    if type(template) == "function" then
+      template = template()
+    end
+    -- if template is a string, split it into lines
+    if type(template) == "string" then
+      template = vim.fn.split(template, "\n")
+    end
     local path = vim.loop.cwd() .. "/.nvim"
     if vim.fn.isdirectory(path) == 0 then
       vim.fn.mkdir(path)
     end
     path = path .. "/deployment.lua"
     if vim.fn.filereadable(path) == 0 then
-      vim.fn.writefile(vim.fn.split(template, "\n"), path)
+      vim.fn.writefile(template, path)
     end
     vim.cmd("edit " .. path)
   end, { nargs = 0 })
@@ -24,18 +32,17 @@ M.setup = function()
       return
     end
 
-    vim.api.nvim_create_autocmd("BufEnter", {
-      pattern = { remote_path },
-      desc = "Add mapping to close diffview",
-      once = true,
-      callback = function()
-        local config = require("transfer.config")
-        if config.options.close_diffview_mapping == nil then
-          return
-        end
-        vim.keymap.set("n", config.options.close_diffview_mapping, "<cmd>diffoff | bd!<cr>", { buffer = true })
-      end,
-    })
+    local config = require("transfer.config")
+    if config.options.close_diffview_mapping ~= nil then
+      vim.api.nvim_create_autocmd("BufEnter", {
+        pattern = { remote_path },
+        desc = "Add mapping to close diffview",
+        once = true,
+        callback = function()
+          vim.keymap.set("n", config.options.close_diffview_mapping, "<cmd>diffoff | bd!<cr>", { buffer = true })
+        end,
+      })
+    end
 
     vim.api.nvim_command("silent! diffsplit " .. remote_path)
   end, { nargs = 0 })
