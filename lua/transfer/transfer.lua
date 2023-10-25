@@ -44,10 +44,12 @@ function M.remote_scp_path(local_path)
   local skip_reason
   for name, deployment in pairs(deployment_conf) do
     local skip = false
-    for _, excluded in pairs(deployment.excludedPaths) do
-      if string.find(local_path, excluded, 1, true) then
-        skip_reason = "File is excluded from deployment on " .. name .. " by rule: " .. excluded
-        skip = true
+    if deployment.excludedPaths ~= nil then
+      for _, excluded in pairs(deployment.excludedPaths) do
+        if string.find(local_path, excluded, 1, true) then
+          skip_reason = "File is excluded from deployment on " .. name .. " by rule: " .. excluded
+          skip = true
+        end
       end
     end
     if not skip then
