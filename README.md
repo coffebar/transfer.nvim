@@ -43,7 +43,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
     port = 9202, -- optional
     mappings = {
       {
-        ["local"] = "live",
+        ["local"] = "live", -- path relative to project root
         ["remote"] = "/var/www/example.com",
       },
       {
@@ -52,7 +52,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
       },
     },
     excludedPaths = { -- optional
-      "src",
+      "src", -- local path relative to project root
     },
   },
 }
