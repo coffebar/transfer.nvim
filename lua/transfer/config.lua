@@ -13,7 +13,7 @@ return {
       },
     },
     -- excludedPaths = {
-    --   "src",
+    --   "src", -- local path relative to project root
     -- },
   },
 }

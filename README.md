@@ -40,7 +40,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
-    port = 9202, -- optional
+    port = 9202, -- optional: overwrite ssh port
     mappings = {
       {
         ["local"] = "live", -- path relative to project root
