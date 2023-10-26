@@ -23,6 +23,44 @@ local function reload_buffer(bufnr)
 end
 
 -- get the remote path for scp
+-- @param deployment table
+-- @param remote_file string
+-- @return string
+local function build_scp_path(deployment, remote_file)
+  local remote_path = "scp://"
+  if deployment.username then
+    remote_path = remote_path .. deployment.username .. "@"
+  end
+  remote_path = remote_path .. deployment.host
+  if deployment.port then
+    remote_path = remote_path .. ":" .. deployment.port
+  end
+  remote_path = remote_path .. "/" .. remote_file
+  return remote_path
+end
+
+-- get the excluded paths for the given directory
+-- @param deployment table
+-- @param dir string
+-- @return table
+local function excluded_paths_for_dir(deployment, dir)
+  local excludedPaths = {}
+  if deployment and deployment.excludedPaths and #deployment.excludedPaths > 0 then
+    local cwd = vim.loop.cwd()
+    -- remove cwd from local file path
+    local local_path = dir:gsub(cwd, ""):gsub("^/", "")
+    for _, excluded in pairs(deployment.excludedPaths) do
+      local s, e = string.find(excluded, local_path, 1, true)
+      if s then
+        excluded = string.sub(excluded, e + 1)
+        table.insert(excludedPaths, excluded)
+      end
+    end
+  end
+  return excludedPaths
+end
+
+-- get the remote path for scp
 -- @param local_path string
 -- @return string
 function M.remote_scp_path(local_path)
@@ -59,16 +97,7 @@ function M.remote_scp_path(local_path)
           local remote_file = string.sub(local_path, e + 1)
           remote_file = mapping["remote"] .. remote_file
           remote_file = remote_file:gsub("^//", "/")
-          local remote_path = "scp://"
-          if deployment.username then
-            remote_path = remote_path .. deployment.username .. "@"
-          end
-          remote_path = remote_path .. deployment.host
-          if deployment.port and deployment.port ~= 22 then
-            remote_path = remote_path .. ":" .. deployment.port
-          end
-          remote_path = remote_path .. "/" .. remote_file
-          return remote_path
+          return build_scp_path(deployment, remote_file), deployment
         end
       end
     end
@@ -88,7 +117,7 @@ end
 -- @param local_path string
 -- @return string
 function M.remote_rsync_path(local_path)
-  local remote_path = M.remote_scp_path(local_path)
+  local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
     return
   end
@@ -96,7 +125,7 @@ function M.remote_rsync_path(local_path)
   remote_path = remote_path:gsub("^scp://", "")
   -- replace only the first occurrence of / with :
   remote_path = remote_path:gsub("/", ":", 1)
-  return remote_path
+  return remote_path, deployment
 end
 
 -- upload the given file
@@ -208,16 +237,24 @@ end
 -- @param dir string
 -- @param upload boolean
 function M.sync_dir(dir, upload)
-  local remote_path = M.remote_rsync_path(dir)
+  local remote_path, deployment = M.remote_rsync_path(dir)
   if remote_path == nil then
     return
   end
 
+  local excluded = excluded_paths_for_dir(deployment, dir)
+
   local cmd = { "rsync" }
   if upload then
     vim.list_extend(cmd, config.options.upload_rsync_params)
+    for _, path in pairs(excluded) do
+      vim.list_extend(cmd, { "--exclude", path })
+    end
     vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
   else
+    for _, path in pairs(excluded) do
+      vim.list_extend(cmd, { "--exclude", path })
+    end
     vim.list_extend(cmd, config.options.download_rsync_params)
     vim.list_extend(cmd, { remote_path .. "/", dir .. "/" })
   end
@@ -290,12 +327,16 @@ function M.sync_dir(dir, upload)
 end
 
 function M.show_dir_diff(dir)
-  local remote_path = M.remote_rsync_path(dir)
+  local remote_path, deployment = M.remote_rsync_path(dir)
   if remote_path == nil then
     return
   end
 
+  local excluded = excluded_paths_for_dir(deployment, dir)
   local cmd = { "rsync", "-rlzi", "--dry-run", "--checksum", "--delete", "--out-format=%n" }
+  for _, path in pairs(excluded) do
+    vim.list_extend(cmd, { "--exclude", path })
+  end
   local lines = { " " .. table.concat(cmd, " ") }
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
