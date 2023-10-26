@@ -54,7 +54,6 @@ DEPLOYMENT CONFIG EXAMPLE*transfer.nvim-transfer.nvim-deployment-config-example*
       ["example_name"] = {
         host = "myhost",
         username = "web", -- optional
-        port = 9202, -- optional
         mappings = {
           {
             ["local"] = "live",

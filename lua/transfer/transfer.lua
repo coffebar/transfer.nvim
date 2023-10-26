@@ -32,9 +32,6 @@ local function build_scp_path(deployment, remote_file)
     remote_path = remote_path .. deployment.username .. "@"
   end
   remote_path = remote_path .. deployment.host
-  if deployment.port then
-    remote_path = remote_path .. ":" .. deployment.port
-  end
   remote_path = remote_path .. "/" .. remote_file
   return remote_path
 end
