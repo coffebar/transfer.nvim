@@ -1,7 +1,6 @@
 local M = {}
 
 M.recent_command = nil
-M.recent_command_args = {}
 
 local function create_autocmd()
   local augroup = vim.api.nvim_create_augroup("TransferNvim", { clear = true })
@@ -11,7 +10,6 @@ local function create_autocmd()
     desc = "Clear recent command after changing directory",
     callback = function()
       M.recent_command = nil
-      M.recent_command_args = {}
     end,
   })
 end
@@ -21,8 +19,6 @@ M.setup = function()
 
   -- TransferInit - create a config file and open it. Just edit if it already exists
   vim.api.nvim_create_user_command("TransferInit", function()
-    M.recent_command = "TransferInit"
-    M.recent_command_args = {}
     local config = require("transfer.config")
     local template = config.options.config_template
     -- if template is a function, call it
@@ -53,17 +49,11 @@ M.setup = function()
       })
       return
     end
-    if #M.recent_command_args == 0 then
-      vim.cmd(M.recent_command)
-    else
-      vim.cmd(M.recent_command .. " " .. table.concat(M.recent_command_args, " "))
-    end
+    vim.cmd(M.recent_command)
   end, { nargs = 0 })
 
   -- DiffRemote - open a diff view with the remote file
   vim.api.nvim_create_user_command("DiffRemote", function()
-    M.recent_command = "DiffRemote"
-    M.recent_command_args = {}
     local local_path = vim.fn.expand("%:p")
     local remote_path = require("transfer.transfer").remote_scp_path(local_path)
     if remote_path == nil then
@@ -94,8 +84,7 @@ M.setup = function()
     if path == nil or path == "" then
       path = vim.fn.expand("%:p")
     end
-    M.recent_command = "TransferUpload"
-    M.recent_command_args = { path }
+    M.recent_command = "TransferUpload " .. path
     if vim.fn.isdirectory(path) == 1 then
       require("transfer.transfer").sync_dir(path, true)
     else
@@ -112,8 +101,7 @@ M.setup = function()
     if path == nil or path == "" then
       path = vim.fn.expand("%:p")
     end
-    M.recent_command = "TransferDownload"
-    M.recent_command_args = { path }
+    M.recent_command = "TransferDownload " .. path
     if vim.fn.isdirectory(path) == 1 then
       require("transfer.transfer").sync_dir(path, false)
     else
@@ -130,8 +118,7 @@ M.setup = function()
     if path == nil or path == "" then
       path = vim.fn.expand("%:p")
     end
-    M.recent_command = "TransferDirDiff"
-    M.recent_command_args = { path }
+    M.recent_command = "TransferDirDiff " .. path
     require("transfer.transfer").show_dir_diff(path)
   end, { nargs = "?" })
 end

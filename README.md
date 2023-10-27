@@ -29,10 +29,10 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 - `TransferInit` - create a config file and open it. Just edit if it already exists.
 - `DiffRemote` - open a diff view with the remote file.
+- `TransferRepeat` - repeat the last transfer command (except TransferInit, DiffRemote).
 - `TransferUpload [path]` - upload the given file or directory.
 - `TransferDownload [path]` - download the given file or directory.
 - `TransferDirDiff [path]` - diff the directory with the remote one and display the changed files in the quickfix.
-- `TransferRepeat` - repeat the last transfer command.
 
 ## Deployment config example
 
