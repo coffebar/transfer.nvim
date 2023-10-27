@@ -14,7 +14,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 {
     "coffebar/transfer.nvim",
     lazy = true,
-    cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff" },
+    cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
     opts = {},
 },
 ```
@@ -32,6 +32,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 - `TransferUpload [path]` - upload the given file or directory.
 - `TransferDownload [path]` - download the given file or directory.
 - `TransferDirDiff [path]` - diff the directory with the remote one and display the changed files in the quickfix.
+- `TransferRepeat` - repeat the last transfer command.
 
 ## Deployment config example
 
@@ -124,6 +125,7 @@ wk.register({
         u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
         f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
         i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
+        r = { "<cmd>TransferRepeat<cr>", "Repeat transfer command" },
       },
     }
 })

@@ -31,7 +31,7 @@ LAZY.NVIM ~
     {
         "coffebar/transfer.nvim",
         lazy = true,
-        cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff" },
+        cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
         opts = {},
     },
 <
@@ -45,6 +45,7 @@ COMMANDS                                *transfer.nvim-transfer.nvim-commands*
 - `TransferUpload [path]` - upload the given file or directory.
 - `TransferDownload [path]` - download the given file or directory.
 - `TransferDirDiff [path]` - diff the directory with the remote one and display the changed files in the quickfix.
+- `TransferRepeat` - repeat the last transfer command.
 
 
 DEPLOYMENT CONFIG EXAMPLE*transfer.nvim-transfer.nvim-deployment-config-example*
@@ -141,6 +142,7 @@ WHICH-KEY ~
             u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
             f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
             i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
+            r = { "<cmd>TransferRepeat<cr>", "Repeat transfer command" },
           },
         }
     })
