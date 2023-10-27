@@ -63,8 +63,7 @@ end
 function M.remote_scp_path(local_path)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
-  local file_exists = vim.fn.filereadable(config_file) == 1
-  if not file_exists then
+  if vim.fn.filereadable(config_file) ~= 1 then
     vim.notify("No deployment config found in \n" .. config_file, vim.log.levels.ERROR, {
       title = "Error",
       icon = " ",
@@ -82,7 +81,7 @@ function M.remote_scp_path(local_path)
     if deployment.excludedPaths ~= nil then
       for _, excluded in pairs(deployment.excludedPaths) do
         if string.find(local_path, excluded, 1, true) then
-          skip_reason = "File is excluded from deployment on " .. name .. " by rule: " .. excluded
+          skip_reason = "File is excluded from deployment\non " .. name .. " by rule: " .. excluded
           skip = true
         end
       end
@@ -103,7 +102,7 @@ function M.remote_scp_path(local_path)
     skip_reason = "File '" .. local_path .. "'\nis not mapped in deployment config"
   end
   vim.notify(skip_reason, vim.log.levels.ERROR, {
-    title = "No matches found",
+    title = "No mappings found",
     icon = " ",
     timeout = 4000,
   })
@@ -169,6 +168,7 @@ function M.upload_file(local_path)
           title = "Error uploading file",
           timeout = 4000,
           replace = replace,
+          icon = " ",
         })
       end
     end,
@@ -222,6 +222,7 @@ function M.download_file(local_path)
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
           title = "Error downloading file",
+          icon = " ",
           timeout = 4000,
           replace = replace,
         })
@@ -257,7 +258,8 @@ function M.sync_dir(dir, upload)
   end
 
   local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
-    title = " Sync started...",
+    title = "Sync started...",
+    icon = " ",
     timeout = 5000,
   })
   local replace
@@ -285,6 +287,7 @@ function M.sync_dir(dir, upload)
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
           timeout = 10000,
           title = "Error running rsync",
+          icon = " ",
           replace = replace,
         })
         return
@@ -306,12 +309,7 @@ function M.sync_dir(dir, upload)
       end
 
       if #output == 0 then
-        vim.notify(" No differences found", vim.log.levels.INFO, {
-          timeout = 3000,
-          title = "Sync completed",
-          replace = replace,
-        })
-        return
+        output = { "No differences found" }
       end
       vim.notify(table.concat(output, "\n"), vim.log.levels.INFO, {
         timeout = 3000,
@@ -341,7 +339,8 @@ function M.show_dir_diff(dir)
   dir = dir:gsub(vim.loop.cwd(), ""):gsub("^/", "")
 
   local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
-    title = " Diff started...",
+    title = "Diff started...",
+    icon = " ",
     timeout = 3500,
   })
   local replace
@@ -371,6 +370,7 @@ function M.show_dir_diff(dir)
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
           timeout = 10000,
           title = "Error running rsync",
+          icon = " ",
           replace = replace,
         })
         return
@@ -378,9 +378,7 @@ function M.show_dir_diff(dir)
       if #output == 0 then
         table.insert(lines, " No differences found")
       else
-        for _, line in pairs(output) do
-          table.insert(lines, line)
-        end
+        vim.list_extend(lines, output)
       end
       -- show quickfix list
       vim.fn.setqflist({}, "r", { title = "Diff: " .. dir, lines = lines })
