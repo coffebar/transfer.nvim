@@ -64,11 +64,15 @@ function M.remote_scp_path(local_path)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
   if vim.fn.filereadable(config_file) ~= 1 then
-    vim.notify("No deployment config found in \n" .. config_file, vim.log.levels.ERROR, {
-      title = "Error",
-      icon = " ",
-      timeout = 4000,
-    })
+    vim.notify(
+      "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
+      vim.log.levels.WARN,
+      {
+        title = "Transfer.nvim",
+        icon = " ",
+        timeout = 4000,
+      }
+    )
     return nil
   end
   local deployment_conf = dofile(config_file)
