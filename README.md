@@ -21,9 +21,9 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 ## Recommended to use with
 
-- `rcarriga/nvim-notify` - animated popup notifications
-- `nvim-neo-tree/neo-tree.nvim` - file explorer
-- `coffebar/neovim-project` - project management
+- [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify) - animated popup notifications
+- [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) - file explorer
+- [coffebar/neovim-project](https://github.com/coffebar/neovim-project) - project management
 
 ## Commands
 
