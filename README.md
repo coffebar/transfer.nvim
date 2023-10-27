@@ -19,12 +19,6 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 },
 ```
 
-## Recommended to use with
-
-- [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify) - animated popup notifications
-- [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) - file explorer
-- [coffebar/neovim-project](https://github.com/coffebar/neovim-project) - project management
-
 ## Commands
 
 - `TransferInit` - create a config file and open it. Just edit if it already exists.
@@ -130,6 +124,12 @@ wk.register({
     }
 })
 ```
+
+## Recommended to use with
+
+- [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify) - animated popup notifications.
+- [nvim-neo-tree/neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) - file explorer.
+- [coffebar/neovim-project](https://github.com/coffebar/neovim-project) - project management.
 
 ## Migration from JetBrains config
 
