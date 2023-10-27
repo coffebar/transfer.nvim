@@ -27,11 +27,11 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 ## Commands
 
-- `TransferInit` - create a config file and open it. Just edit if it already exists
-- `DiffRemote` - open a diff view with the remote file
-- `TransferUpload [path]` - upload the given file or directory
-- `TransferDownload [path]` - download the given file or directory
-- `TransferDirDiff [path]` - diff the current directory with the remote one (show changed files in qf window)
+- `TransferInit` - create a config file and open it. Just edit if it already exists.
+- `DiffRemote` - open a diff view with the remote file.
+- `TransferUpload [path]` - upload the given file or directory.
+- `TransferDownload [path]` - download the given file or directory.
+- `TransferDirDiff [path]` - diff the directory with the remote one and display the changed files in the quickfix.
 
 ## Deployment config example
 
