@@ -111,7 +111,7 @@ Host server2
 ### Which-key
 
 ```lua
-wk.register({
+require("which-key").register({
     ["<leader>"] = {
       u = {
         name = "Upload / Download",

@@ -1,4 +1,4 @@
-*transfer.nvim.txt*              For              Last change: 2023 October 25
+*transfer.nvim.txt*              For              Last change: 2023 October 28
 
 ==============================================================================
 Table of Contents                            *transfer.nvim-table-of-contents*
@@ -134,7 +134,7 @@ NEO-TREE ~
 WHICH-KEY ~
 
 >lua
-    wk.register({
+    require("which-key").register({
         ["<leader>"] = {
           u = {
             name = "Upload / Download",
