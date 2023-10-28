@@ -46,7 +46,8 @@ It supports mapping multiple local and remote paths, excluded path, and more.
       },
     },
     excludedPaths = { -- optional
-      "src", -- local path relative to project root
+      "live/src/", -- local path relative to project root
+      "test/src/",
     },
   },
 }
