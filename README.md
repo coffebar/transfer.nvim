@@ -12,10 +12,10 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 ```lua
 {
-    "coffebar/transfer.nvim",
-    lazy = true,
-    cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
-    opts = {},
+  "coffebar/transfer.nvim",
+  lazy = true,
+  cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
+  opts = {},
 },
 ```
 
@@ -113,16 +113,16 @@ Host server2
 
 ```lua
 require("which-key").register({
-    ["<leader>"] = {
-      u = {
-        name = "Upload / Download",
-        d = { "<cmd>TransferDownload<cr>", "Download from remote server (scp)" },
-        u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
-        f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
-        i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
-        r = { "<cmd>TransferRepeat<cr>", "Repeat transfer command" },
-      },
-    }
+  ["<leader>"] = {
+    u = {
+      name = "Upload / Download",
+      d = { "<cmd>TransferDownload<cr>", "Download from remote server (scp)" },
+      u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
+      f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
+      i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
+      r = { "<cmd>TransferRepeat<cr>", "Repeat transfer command" },
+    },
+  }
 })
 ```
 
