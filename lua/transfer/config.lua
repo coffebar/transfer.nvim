@@ -12,9 +12,9 @@ return {
         ["remote"] = "/var/www/example.com",
       },
     },
-    excludedPaths = {
-      ".nvim", -- local path relative to project root
-    },
+    -- excludedPaths = {
+    --   "src", -- local path relative to project root
+    -- },
   },
 }
 ]],
