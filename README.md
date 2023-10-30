@@ -38,7 +38,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
     mappings = {
       {
         ["local"] = "live", -- path relative to project root
-        ["remote"] = "/var/www/example.com",
+        ["remote"] = "/var/www/example.com", -- absolute path
       },
       {
         ["local"] = "test",
