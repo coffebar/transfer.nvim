@@ -148,6 +148,10 @@ function M.upload_file(local_path)
     timeout = 0,
     icon = "󱕌 ",
   })
+  local replace
+  if notification ~= nil and notification.Record then
+    replace = notification.Record
+  end
   vim.fn.jobstart({ "scp", local_path, remote_path }, {
     on_stderr = function(_, data, _)
       if data == nil or #data == 0 then
@@ -161,13 +165,13 @@ function M.upload_file(local_path)
           title = "File uploaded",
           icon = "",
           timeout = 3000,
-          replace = notification,
+          replace = replace,
         })
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
           title = "Error uploading file",
           timeout = 4000,
-          replace = notification,
+          replace = replace,
           icon = " ",
         })
       end
@@ -194,6 +198,10 @@ function M.download_file(local_path)
     timeout = 0,
     icon = "󱕉 ",
   })
+  local replace
+  if notification ~= nil and notification.Record then
+    replace = notification.Record
+  end
   local stderr = {}
   vim.fn.jobstart({ "scp", remote_path, local_path }, {
     on_stderr = function(_, data, _)
@@ -208,7 +216,7 @@ function M.download_file(local_path)
           title = "Remote file downloaded",
           icon = "",
           timeout = 1000,
-          replace = notification,
+          replace = replace,
         })
         -- reload buffer for the downloaded file
         local bufnr = vim.fn.bufnr(local_path)
@@ -220,7 +228,7 @@ function M.download_file(local_path)
           title = "Error downloading file",
           icon = " ",
           timeout = 4000,
-          replace = notification,
+          replace = replace,
         })
       end
     end,
@@ -258,6 +266,10 @@ function M.sync_dir(dir, upload)
     icon = " ",
     timeout = 5000,
   })
+  local replace
+  if notification ~= nil and notification.Record then
+    replace = notification.Record
+  end
   local output = {}
   local stderr = {}
   vim.fn.jobstart(cmd, {
@@ -280,7 +292,7 @@ function M.sync_dir(dir, upload)
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
-          replace = notification,
+          replace = replace,
         })
         return
       end
@@ -307,7 +319,7 @@ function M.sync_dir(dir, upload)
         timeout = 3000,
         title = "Sync completed",
         icon = " ",
-        replace = notification,
+        replace = replace,
       })
     end,
   })
@@ -335,6 +347,10 @@ function M.show_dir_diff(dir)
     icon = " ",
     timeout = 3500,
   })
+  local replace
+  if notification ~= nil and notification.Record then
+    replace = notification.Record
+  end
   vim.list_extend(lines, { dir, remote_path, "------" })
   local output = {}
   local stderr = {}
@@ -359,7 +375,7 @@ function M.show_dir_diff(dir)
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
-          replace = notification,
+          replace = replace,
         })
         return
       end
