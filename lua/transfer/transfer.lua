@@ -365,6 +365,18 @@ function M.show_dir_diff(dir)
   for _, path in pairs(excluded) do
     vim.list_extend(cmd, { "--exclude", path })
   end
+
+  if config.options.upload_rsync_params ~= nil then
+    for i, v in ipairs(config.options.upload_rsync_params) do
+      if v == "--exclude" then
+        if i + 1 > #config.options.upload_rsync_params then
+          break
+        end
+        vim.list_extend(cmd, { v, config.options.upload_rsync_params[i + 1] })
+      end
+    end
+  end
+
   local lines = { " " .. table.concat(cmd, " ") }
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
