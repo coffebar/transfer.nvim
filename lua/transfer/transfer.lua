@@ -22,6 +22,19 @@ local function reload_buffer(bufnr)
   end
 end
 
+-- convert the given local absolute path to a relative project root path
+-- @param absolute_path string
+-- @return string
+local function normalize_local_path(absolute_path)
+  local cwd = vim.loop.cwd()
+  local found, found_end = string.find(absolute_path, cwd, 1, true)
+  if found == 1 then
+    absolute_path = string.sub(absolute_path, found_end + 1)
+  end
+  -- remove leading slash
+  return string.gsub(absolute_path, "^/", "")
+end
+
 -- get the remote path for scp
 -- @param deployment table
 -- @param remote_file string
@@ -43,9 +56,8 @@ end
 local function excluded_paths_for_dir(deployment, dir)
   local excludedPaths = {}
   if deployment and deployment.excludedPaths and #deployment.excludedPaths > 0 then
-    local cwd = vim.loop.cwd()
     -- remove cwd from local file path
-    local local_path = dir:gsub(cwd, ""):gsub("^/", "")
+    local local_path = normalize_local_path(dir)
     for _, excluded in pairs(deployment.excludedPaths) do
       local s, e = string.find(excluded, local_path, 1, true)
       if s then
@@ -77,12 +89,7 @@ function M.remote_scp_path(local_path)
   end
   local deployment_conf = dofile(config_file)
   -- remove cwd from local file path
-  local found, found_end = string.find(local_path, cwd, 1, true)
-  if found == 1 then
-    local_path = string.sub(local_path, found_end + 1)
-  end
-  -- remove leading slash
-  local_path = string.gsub(local_path, "^/", "")
+  local_path = normalize_local_path(local_path)
 
   local skip_reason
   for name, deployment in pairs(deployment_conf) do
