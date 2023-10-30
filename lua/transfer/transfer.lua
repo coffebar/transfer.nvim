@@ -99,17 +99,26 @@ function M.remote_scp_path(local_path)
       for _, mapping in pairs(deployment.mappings) do
         -- handle mappings like nil, "" or "/" as same thing
         local mapped = mapping["local"]
+        local remote_file = nil
         if mapped == nil or mapped == "" or mapped == "/" or mapped == "." then
-          local remote_file = "/" .. local_path
-          remote_file = mapping["remote"] .. remote_file
-          remote_file = remote_file:gsub("//", "/")
+          if mapping["remote"] == nil or mapping["remote"] == "" or mapping["remote"] == "/" then
+            remote_file = local_path
+          else
+            remote_file = mapping["remote"]
+            if remote_file:sub(-1) ~= "/" and local_path ~= "" then
+              remote_file = remote_file .. "/"
+            end
+            remote_file = remote_file .. local_path
+          end
           return build_scp_path(deployment, remote_file), deployment
+        else
+          local start, e = string.find(local_path, mapped, 1, true)
+          if start == 1 then
+            remote_file = mapping["remote"] .. string.sub(local_path, e + 1)
+            remote_file = remote_file:gsub("^//", "/")
+          end
         end
-        local start, e = string.find(local_path, mapped, 1, true)
-        if start == 1 then
-          local remote_file = string.sub(local_path, e + 1)
-          remote_file = mapping["remote"] .. remote_file
-          remote_file = remote_file:gsub("^//", "/")
+        if remote_file ~= nil then
           return build_scp_path(deployment, remote_file), deployment
         end
       end
