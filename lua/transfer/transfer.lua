@@ -77,7 +77,12 @@ function M.remote_scp_path(local_path)
   end
   local deployment_conf = dofile(config_file)
   -- remove cwd from local file path
-  local_path = local_path:gsub(cwd, ""):gsub("^/", "")
+  local found, found_end = string.find(local_path, cwd, 1, true)
+  if found == 1 then
+    local_path = string.sub(local_path, found_end + 1)
+  end
+  -- remove leading slash
+  local_path = string.gsub(local_path, "^/", "")
 
   local skip_reason
   for name, deployment in pairs(deployment_conf) do
@@ -92,7 +97,15 @@ function M.remote_scp_path(local_path)
     end
     if not skip then
       for _, mapping in pairs(deployment.mappings) do
-        local start, e = string.find(local_path, mapping["local"], 1, true)
+        -- handle mappings like nil, "" or "/" as same thing
+        local mapped = mapping["local"]
+        if mapped == nil or mapped == "" or mapped == "/" or mapped == "." then
+          local remote_file = "/" .. local_path
+          remote_file = mapping["remote"] .. remote_file
+          remote_file = remote_file:gsub("//", "/")
+          return build_scp_path(deployment, remote_file), deployment
+        end
+        local start, e = string.find(local_path, mapped, 1, true)
         if start == 1 then
           local remote_file = string.sub(local_path, e + 1)
           remote_file = mapping["remote"] .. remote_file
