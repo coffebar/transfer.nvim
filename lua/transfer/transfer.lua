@@ -35,6 +35,27 @@ local function normalize_local_path(absolute_path)
   return string.gsub(absolute_path, "^/", "")
 end
 
+-- check if the given path matches the given pattern
+-- @param path string
+-- @param pattern string
+-- @return boolean
+local function path_matches(path, pattern)
+  pattern = string.gsub(pattern, "/$", "")
+  path = string.gsub(path, "/$", "")
+  local s, e = string.find(path, pattern, 1, true)
+  if s ~= 1 then
+    return false
+  end
+  if e == #path then
+    return true
+  end
+  local next_char = string.sub(path, e + 1, e + 1)
+  if next_char == "/" then
+    return true
+  end
+  return false
+end
+
 -- get the remote path for scp
 -- @param deployment table
 -- @param remote_file string
@@ -59,10 +80,13 @@ local function excluded_paths_for_dir(deployment, dir)
     -- remove cwd from local file path
     local local_path = normalize_local_path(dir)
     for _, excluded in pairs(deployment.excludedPaths) do
-      local s, e = string.find(excluded, local_path, 1, true)
-      if s then
-        excluded = string.sub(excluded, e + 1)
-        table.insert(excludedPaths, excluded)
+      excluded = string.gsub(excluded, "^/", "")
+      if path_matches(excluded, local_path) then
+        local s, e = string.find(excluded, local_path, 1, true)
+        if s then
+          excluded = string.sub(excluded, e + 1)
+          table.insert(excludedPaths, excluded)
+        end
       end
     end
   end
@@ -96,7 +120,8 @@ function M.remote_scp_path(local_path)
     local skip = false
     if deployment.excludedPaths ~= nil then
       for _, excluded in pairs(deployment.excludedPaths) do
-        if string.find(local_path, excluded, 1, true) then
+        excluded = string.gsub(excluded, "^/", "")
+        if path_matches(local_path, excluded) then
           skip_reason = "File is excluded from deployment\non " .. name .. " by rule: " .. excluded
           skip = true
         end
@@ -119,10 +144,22 @@ function M.remote_scp_path(local_path)
           end
           return build_scp_path(deployment, remote_file), deployment
         else
-          local start, e = string.find(local_path, mapped, 1, true)
-          if start == 1 then
-            remote_file = mapping["remote"] .. string.sub(local_path, e + 1)
-            remote_file = remote_file:gsub("^//", "/")
+          if path_matches(local_path, mapped) then
+            if local_path:sub(-1) == "/" and mapped:sub(-1) ~= "/" then
+              -- if local_path ends with a slash, and mapped does not, add it
+              mapped = mapped .. "/"
+            end
+            if local_path == mapped then
+              remote_file = mapping["remote"]
+            else
+              remote_file = mapping["remote"] .. string.sub(local_path, #mapped + 1)
+            end
+            -- align trailing slashes with input
+            if local_path:sub(-1) == "/" and remote_file:sub(-1) ~= "/" then
+              remote_file = remote_file .. "/"
+            elseif local_path:sub(-1) ~= "/" and remote_file:sub(-1) == "/" then
+              remote_file = remote_file:sub(1, #remote_file - 1)
+            end
           end
         end
         if remote_file ~= nil then
