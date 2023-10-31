@@ -17,7 +17,7 @@ local function reload_buffer(bufnr)
   end
   if vim.api.nvim_buf_is_valid(bufnr) then
     vim.api.nvim_buf_call(bufnr, function()
-      vim.api.nvim_command("edit")
+      vim.api.nvim_command("edit!")
     end)
   end
 end
