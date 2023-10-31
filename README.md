@@ -154,6 +154,8 @@ https://github.com/coffebar/transfer.nvim/assets/3100053/32cb642a-9040-47dd-a661
 
 Feel free to contribute, open issues, and submit pull requests to help us improve transfer.nvim.
 
+Run tests with `make test`.
+
 ## Similar projects
 
 - [KenN7/vim-arsync](https://github.com/KenN7/vim-arsync)
