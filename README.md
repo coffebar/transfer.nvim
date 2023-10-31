@@ -141,6 +141,9 @@ require("which-key").register({
 
 [Look at defaults](https://github.com/coffebar/transfer.nvim/blob/main/lua/transfer/config.lua) and overwrite anything in your opts.
 
+## Demo video
+
+https://github.com/coffebar/transfer.nvim/assets/3100053/32cb642a-9040-47dd-a661-4058869c79f1
 
 ## Not tested or not working:
 
