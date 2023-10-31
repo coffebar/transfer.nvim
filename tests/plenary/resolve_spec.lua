@@ -102,9 +102,9 @@ return {
     assert.equals("server2:test.com/dir", remote_rsync_path(cwd .. "/domain/test/dir"))
     assert.equals(nil, remote_rsync_path(cwd .. "/dir/domain/test/"))
     assert.equals(nil, remote_rsync_path(cwd .. "/domain/test2/.git"))
-    -- FIXME: this test fails:
     assert.equals("server2:/srv/example.com", remote_rsync_path(cwd .. "/domain/test2"))
     assert.equals("server2:/srv/example.com/dir/", remote_rsync_path(cwd .. "/domain/test2/dir/"))
+    assert.equals("server2:/srv/example.com/.github", remote_rsync_path(cwd .. "/domain/test2/.github"))
 
     vim.fn.delete(".nvim/deployment.lua")
   end)
