@@ -51,7 +51,8 @@ COMMANDS                                *transfer.nvim-transfer.nvim-commands*
 DEPLOYMENT CONFIG EXAMPLE*transfer.nvim-transfer.nvim-deployment-config-example*
 
 >lua
-    {
+    -- .nvim/deployment.lua
+    return {
       ["example_name"] = {
         host = "myhost",
         username = "web", -- optional

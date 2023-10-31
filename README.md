@@ -32,7 +32,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 ```lua
 -- .nvim/deployment.lua
-{
+return {
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
