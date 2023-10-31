@@ -31,6 +31,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 ## Deployment config example
 
 ```lua
+-- .nvim/deployment.lua
 {
   ["example_name"] = {
     host = "myhost",
