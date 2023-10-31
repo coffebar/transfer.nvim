@@ -148,5 +148,10 @@ require("which-key").register({
 
 ## Contributing
 
-Feel free to open issues and PRs.
+Feel free to contribute, open issues, and submit pull requests to help us improve transfer.nvim.
+
+## Similar projects
+
+- [KenN7/vim-arsync](https://github.com/KenN7/vim-arsync)
+- [OscarCreator/rsync.nvim](https://github.com/OscarCreator/rsync.nvim)
 
