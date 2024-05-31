@@ -417,9 +417,6 @@ function M.show_dir_diff(dir)
   local lines = { " " .. table.concat(cmd, " ") }
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
-  -- remove cwd from dir path to show in short format
-  dir = dir:gsub(vim.loop.cwd(), ""):gsub("^/", "")
-
   local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
     title = "Diff started...",
     icon = " ",
@@ -429,7 +426,7 @@ function M.show_dir_diff(dir)
   if notification ~= nil and notification.Record then
     replace = notification.Record
   end
-  vim.list_extend(lines, { dir, remote_path, "------" })
+  vim.list_extend(lines, { normalize_local_path(dir), remote_path, "------" })
   local output = {}
   local stderr = {}
   vim.fn.jobstart(cmd, {
