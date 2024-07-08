@@ -74,7 +74,7 @@ end
 -- @param deployment table
 -- @param dir string
 -- @return table
-local function excluded_paths_for_dir(deployment, dir)
+function M.excluded_paths_for_dir(deployment, dir)
   local excludedPaths = {}
   if deployment and deployment.excludedPaths and #deployment.excludedPaths > 0 then
     -- remove cwd from local file path
@@ -310,7 +310,7 @@ function M.sync_dir(dir, upload)
     return
   end
 
-  local excluded = excluded_paths_for_dir(deployment, dir)
+  local excluded = M.excluded_paths_for_dir(deployment, dir)
 
   local cmd = { "rsync" }
   if upload then
@@ -397,7 +397,7 @@ function M.show_dir_diff(dir)
     return
   end
 
-  local excluded = excluded_paths_for_dir(deployment, dir)
+  local excluded = M.excluded_paths_for_dir(deployment, dir)
   local cmd = { "rsync", "-rlzi", "--dry-run", "--checksum", "--delete", "--out-format=%n" }
   for _, path in pairs(excluded) do
     vim.list_extend(cmd, { "--exclude", path })
