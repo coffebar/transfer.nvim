@@ -85,8 +85,12 @@ function M.excluded_paths_for_dir(deployment, dir)
         local s, e = string.find(excluded, local_path, 1, true)
         if s then
           excluded = string.sub(excluded, e + 1)
+          excluded = string.gsub(excluded, "^/", "")
           table.insert(excludedPaths, excluded)
         end
+      elseif not excluded:find("/") and excluded:find("*") then
+        -- pattern
+        table.insert(excludedPaths, excluded)
       end
     end
   end
