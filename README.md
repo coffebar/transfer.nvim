@@ -113,17 +113,13 @@ Host server2
 ### Which-key
 
 ```lua
-require("which-key").register({
-  ["<leader>"] = {
-    u = {
-      name = "Upload / Download",
-      d = { "<cmd>TransferDownload<cr>", "Download from remote server (scp)" },
-      u = { "<cmd>TransferUpload<cr>", "Upload to remote server (scp)" },
-      f = { "<cmd>DiffRemote<cr>", "Diff file with remote server (scp)" },
-      i = { "<cmd>TransferInit<cr>", "Init/Edit Deployment config" },
-      r = { "<cmd>TransferRepeat<cr>", "Repeat transfer command" },
-    },
-  }
+require("which-key").add({
+  { "<leader>u", group = "Upload / Download" },
+  { "<leader>ud", "<cmd>TransferDownload<cr>", desc = "Download from remote server (scp)" },
+  { "<leader>uf", "<cmd>DiffRemote<cr>", desc = "Diff file with remote server (scp)" },
+  { "<leader>ui", "<cmd>TransferInit<cr>", desc = "Init/Edit Deployment config" },
+  { "<leader>ur", "<cmd>TransferRepeat<cr>", desc = "Repeat transfer command" },
+  { "<leader>uu", "<cmd>TransferUpload<cr>", desc = "Upload to remote server (scp)" },
 })
 ```
 
