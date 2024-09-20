@@ -2,6 +2,26 @@ local config = require("transfer.config")
 
 local M = {}
 
+local function file_exists(path)
+  return vim.fn.filereadable(path) == 1
+end
+
+local function load_config(path)
+  if file_exists(path) then
+    local success, result = pcall(dofile, path)
+    if success then
+      return result
+    else
+      vim.notify(
+        "Error loading config file: " .. path .. "\n" .. result,
+        vim.log.levels.ERROR,
+        { title = "Transfer.nvim" }
+      )
+    end
+  end
+  return {}
+end
+
 ---reloads the buffer after a transfer
 ---refreshes the neo-tree if the buffer is a neo-tree
 ---@param bufnr number
@@ -98,13 +118,19 @@ end
 
 ---get the remote path for scp
 ---@param local_path string
----@return string
+---@return string?
 function M.remote_scp_path(local_path)
   local cwd = vim.loop.cwd()
-  local config_file = cwd .. "/.nvim/deployment.lua"
-  if vim.fn.filereadable(config_file) ~= 1 then
+  local local_config_file = cwd .. "/.nvim/deployment.lua"
+  local global_config_file = vim.fn.stdpath("data") .. "/deployment.lua"
+  local local_deployment_conf = load_config(local_config_file)
+  local global_deployment_conf = load_config(global_config_file)
+  -- Merge configurations, local overrides global
+  local merged_deployment_conf = vim.tbl_deep_extend("keep", local_deployment_conf, global_deployment_conf)
+
+  if vim.tbl_isempty(merged_deployment_conf) then
     vim.notify(
-      "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
+      "No deployment config found in \n" .. local_config_file .. " or " .. global_config_file,
       vim.log.levels.WARN,
       {
         title = "Transfer.nvim",
@@ -114,12 +140,12 @@ function M.remote_scp_path(local_path)
     )
     return nil
   end
-  local deployment_conf = dofile(config_file)
+
   -- remove cwd from local file path
   local_path = normalize_local_path(local_path)
 
   local skip_reason
-  for name, deployment in pairs(deployment_conf) do
+  for name, deployment in pairs(merged_deployment_conf) do
     local skip = false
     if deployment.excludedPaths ~= nil then
       for _, excluded in pairs(deployment.excludedPaths) do
