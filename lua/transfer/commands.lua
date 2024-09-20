@@ -14,13 +14,32 @@ local function create_autocmd()
   })
 end
 
+local function get_config_path(is_local)
+  if is_local then
+    local dir = vim.loop.cwd() .. "/.nvim"
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir)
+    end
+    return dir .. "/deployment.lua"
+  end
+  return vim.fn.stdpath("data") .. "/deployment.lua"
+end
+
 M.setup = function()
   create_autocmd()
 
-  -- TransferInit - create a config file and open it. Just edit if it already exists
-  vim.api.nvim_create_user_command("TransferInit", function()
+  -- TransferInit - create a local or global config file and open it. Just edit if it already exists
+  vim.api.nvim_create_user_command("TransferInit", function(selected)
+    local arg = selected.fargs[1] or "local"
+    if arg ~= "local" and arg ~= "global" then
+      vim.notify("Invalid argument: %s" .. arg, vim.log.levels.WARN, {
+        title = "Transfer.nvim",
+        icon = "",
+      })
+      return
+    end
     local config = require("transfer.config")
-    local template = config.options.config_template
+    local template = arg == "local" and config.options.config_template_local or config.options.config_template_global
     -- if template is a function, call it
     if type(template) == "function" then
       template = template()
@@ -29,16 +48,13 @@ M.setup = function()
     if type(template) == "string" then
       template = vim.fn.split(template, "\n")
     end
-    local path = vim.loop.cwd() .. "/.nvim"
-    if vim.fn.isdirectory(path) == 0 then
-      vim.fn.mkdir(path)
-    end
-    path = path .. "/deployment.lua"
+
+    local path = get_config_path(arg == "local")
     if vim.fn.filereadable(path) == 0 then
       vim.fn.writefile(template, path)
     end
     vim.cmd("edit " .. path)
-  end, { nargs = 0 })
+  end, { nargs = "?" })
 
   -- TransferRepeat - repeat the last transfer command
   vim.api.nvim_create_user_command("TransferRepeat", function()

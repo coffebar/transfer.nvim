@@ -2,18 +2,34 @@ local M = {}
 
 M.defaults = {
   -- deployment config template: can be a string, a function or a table of lines
-  config_template = [[
+  config_template_local = [[
 return {
   ["server1"] = {
     host = "server1",
     mappings = {
       {
-        ["local"] = "domains/example.com",
+        ["local"] = "domains/example.com", -- path relative to project root
         ["remote"] = "/var/www/example.com",
       },
     },
     -- excludedPaths = {
     --   "src", -- local path relative to project root
+    -- },
+  },
+}
+]],
+  config_template_global = [[
+return {
+  ["server1"] = {
+    host = "server1",
+    mappings = {
+      {
+        ["local"] = "~/myproject/domains/example", -- absolute path to project root
+        ["remote"] = "/var/www/example.com",
+      },
+    },
+    -- excludedPaths = {
+    --   "src", -- absolute path
     -- },
   },
 }
