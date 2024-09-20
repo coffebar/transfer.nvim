@@ -2,10 +2,9 @@ local config = require("transfer.config")
 
 local M = {}
 
--- reloads the buffer after a transfer
--- refreshes the neo-tree if the buffer is a neo-tree
--- @param bufnr number
--- @return void
+---reloads the buffer after a transfer
+---refreshes the neo-tree if the buffer is a neo-tree
+---@param bufnr number
 local function reload_buffer(bufnr)
   local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
   if filetype == "neo-tree" then
@@ -22,9 +21,9 @@ local function reload_buffer(bufnr)
   end
 end
 
--- convert the given local absolute path to a relative project root path
--- @param absolute_path string
--- @return string
+---convert the given local absolute path to a relative project root path
+---@param absolute_path string
+---@return string
 local function normalize_local_path(absolute_path)
   local cwd = vim.loop.cwd()
   local found, found_end = string.find(absolute_path, cwd, 1, true)
@@ -35,10 +34,10 @@ local function normalize_local_path(absolute_path)
   return string.gsub(absolute_path, "^/", "")
 end
 
--- check if the given path matches the given pattern
--- @param path string
--- @param pattern string
--- @return boolean
+---check if the given path matches the given pattern
+---@param path string
+---@param pattern string
+---@return boolean
 local function path_matches(path, pattern)
   pattern = string.gsub(pattern, "/$", "")
   path = string.gsub(path, "/$", "")
@@ -56,10 +55,10 @@ local function path_matches(path, pattern)
   return false
 end
 
--- get the remote path for scp
--- @param deployment table
--- @param remote_file string
--- @return string
+---get the remote path for scp
+---@param deployment table
+---@param remote_file string
+---@return string
 local function build_scp_path(deployment, remote_file)
   local remote_path = "scp://"
   if deployment.username then
@@ -70,10 +69,10 @@ local function build_scp_path(deployment, remote_file)
   return remote_path
 end
 
--- get the excluded paths for the given directory
--- @param deployment table
--- @param dir string
--- @return table
+---get the excluded paths for the given directory
+---@param deployment table
+---@param dir string
+---@return table
 function M.excluded_paths_for_dir(deployment, dir)
   local excludedPaths = {}
   if deployment and deployment.excludedPaths and #deployment.excludedPaths > 0 then
@@ -97,9 +96,9 @@ function M.excluded_paths_for_dir(deployment, dir)
   return excludedPaths
 end
 
--- get the remote path for scp
--- @param local_path string
--- @return string
+---get the remote path for scp
+---@param local_path string
+---@return string
 function M.remote_scp_path(local_path)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
@@ -183,9 +182,9 @@ function M.remote_scp_path(local_path)
   return nil
 end
 
--- get the remote path for rsync
--- @param local_path string
--- @return string
+---get the remote path for rsync
+---@param local_path string
+---@return string
 function M.remote_rsync_path(local_path)
   local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
@@ -198,9 +197,9 @@ function M.remote_rsync_path(local_path)
   return remote_path, deployment
 end
 
--- upload the given file
--- @param local_path string
--- @return void
+---upload the given file
+---@param local_path string
+---@return void
 function M.upload_file(local_path)
   if local_path == nil then
     local_path = vim.fn.expand("%:p")
@@ -249,8 +248,8 @@ function M.upload_file(local_path)
   })
 end
 
--- Replace local file with remote copy
--- @param local_path string|nil
+---Replace local file with remote copy
+---@param local_path string|nil
 function M.download_file(local_path)
   if local_path == nil then
     local_path = vim.fn.expand("%:p")
@@ -305,9 +304,9 @@ function M.download_file(local_path)
   })
 end
 
--- Sync local and remote directory
--- @param dir string
--- @param upload boolean
+---Sync local and remote directory
+---@param dir string
+---@param upload boolean
 function M.sync_dir(dir, upload)
   local remote_path, deployment = M.remote_rsync_path(dir)
   if remote_path == nil then
