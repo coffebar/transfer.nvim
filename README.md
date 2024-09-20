@@ -21,7 +21,7 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 
 ## Commands
 
-- `TransferInit` - create a config file and open it. Just edit if it already exists.
+- `TransferInit [project|global]?` - create a project-level or global config file and open it. Just edit if it already exists. If the argument is omitted, the command is called with "project".
 - `DiffRemote` - open a diff view with the remote file.
 - `TransferRepeat` - repeat the last transfer command (except TransferInit, DiffRemote).
 - `TransferUpload [path]` - upload the given file or directory.
@@ -29,16 +29,19 @@ It supports mapping multiple local and remote paths, excluded path, and more.
 - `TransferDirDiff [path]` - diff the directory with the remote one and display the changed files in the quickfix.
 
 ## Deployment config example
+Run `TransferInit project` or `TransferInit global` to create or open the `deployment.lua` config file.
+If there are both a project-level and a global config file, the settings in the project-level config file will overwrite the global settings.
 
 ```lua
--- .nvim/deployment.lua
+-- Project config file <project root>/.nvim/deployment.lua
+-- or global config file ~/.local/share/nvim/deployment.lua
 return {
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
     mappings = {
       {
-        ["local"] = "live", -- path relative to project root
+        ["local"] = "live", -- path relative to project root (for project config file) or absolute path (for global config file)
         ["remote"] = "/var/www/example.com", -- absolute path or relative to user home
       },
       {
@@ -47,7 +50,7 @@ return {
       },
     },
     excludedPaths = { -- optional
-      "live/src/", -- local path relative to project root
+      "live/src/", -- local path relative to project root (for project config file) or absolute path (for global config file)
       "test/src/",
     },
   },
