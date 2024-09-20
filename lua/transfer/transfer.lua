@@ -120,17 +120,19 @@ end
 ---@param local_path string
 ---@return string?
 function M.remote_scp_path(local_path)
-  local cwd = vim.loop.cwd()
-  local local_config_file = cwd .. "/.nvim/deployment.lua"
+  local project_config_file = vim.loop.cwd() .. "/.nvim/deployment.lua"
   local global_config_file = vim.fn.stdpath("data") .. "/deployment.lua"
-  local local_deployment_conf = load_config(local_config_file)
+  local project_deployment_conf = load_config(project_config_file)
   local global_deployment_conf = load_config(global_config_file)
-  -- Merge configurations, local overrides global
-  local merged_deployment_conf = vim.tbl_deep_extend("keep", local_deployment_conf, global_deployment_conf)
+  local merged_deployment_conf = global_deployment_conf
+  -- Merge configurations, project overrides global
+  for name, deployment in pairs(project_deployment_conf) do
+    merged_deployment_conf[name] = deployment
+  end
 
   if vim.tbl_isempty(merged_deployment_conf) then
     vim.notify(
-      "No deployment config found in \n" .. local_config_file .. " or " .. global_config_file,
+      "No deployment config found in \n" .. project_config_file .. " or " .. global_config_file,
       vim.log.levels.WARN,
       {
         title = "Transfer.nvim",

@@ -14,8 +14,10 @@ local function create_autocmd()
   })
 end
 
-local function get_config_path(is_local)
-  if is_local then
+---@param is_project_config boolean
+---@return string
+local function get_config_path(is_project_config)
+  if is_project_config then
     local dir = vim.loop.cwd() .. "/.nvim"
     if vim.fn.isdirectory(dir) == 0 then
       vim.fn.mkdir(dir)
@@ -28,10 +30,10 @@ end
 M.setup = function()
   create_autocmd()
 
-  -- TransferInit - create a local or global config file and open it. Just edit if it already exists
+  -- TransferInit - create a project-level or global config file and open it. Just edit if it already exists
   vim.api.nvim_create_user_command("TransferInit", function(selected)
     local arg = selected.fargs[1] or "local"
-    if arg ~= "local" and arg ~= "global" then
+    if arg ~= "project" and arg ~= "global" then
       vim.notify("Invalid argument: %s" .. arg, vim.log.levels.WARN, {
         title = "Transfer.nvim",
         icon = "",
@@ -39,7 +41,7 @@ M.setup = function()
       return
     end
     local config = require("transfer.config")
-    local template = arg == "local" and config.options.config_template_local or config.options.config_template_global
+    local template = arg == "project" and config.options.config_template_local or config.options.config_template_global
     -- if template is a function, call it
     if type(template) == "function" then
       template = template()
@@ -49,7 +51,7 @@ M.setup = function()
       template = vim.fn.split(template, "\n")
     end
 
-    local path = get_config_path(arg == "local")
+    local path = get_config_path(arg == "project")
     if vim.fn.filereadable(path) == 0 then
       vim.fn.writefile(template, path)
     end
