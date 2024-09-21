@@ -29,7 +29,7 @@ return {
       },
     },
     -- excludedPaths = {
-    --   "src", -- absolute path
+    --   "/var/src", -- absolute path
     -- },
   },
 }

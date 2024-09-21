@@ -57,22 +57,29 @@ end
 ---check if the given path matches the given pattern
 ---@param path string
 ---@param pattern string
+---@param is_relative boolean
 ---@return boolean
-local function path_matches(path, pattern)
+local function path_matches(path, pattern, is_relative)
   pattern = string.gsub(pattern, "/$", "")
   path = string.gsub(path, "/$", "")
-  local s, e = string.find(path, pattern, 1, true)
-  if s ~= 1 then
+  if is_relative then
+    local s, e = string.find(path, pattern, 1, true)
+    if s ~= 1 then
+      return false
+    end
+    if e == #path then
+      return true
+    end
+    local next_char = string.sub(path, e + 1, e + 1)
+    if next_char == "/" then
+      return true
+    end
     return false
+  else
+    local absolute_path = vim.fs.normalize(vim.loop.cwd() .. "/" .. path)
+    local absolute_pattern = vim.fs.normalize(pattern)
+    return vim.startswith(absolute_path, absolute_pattern)
   end
-  if e == #path then
-    return true
-  end
-  local next_char = string.sub(path, e + 1, e + 1)
-  if next_char == "/" then
-    return true
-  end
-  return false
 end
 
 ---get the remote path for scp
@@ -96,11 +103,13 @@ end
 function M.excluded_paths_for_dir(deployment, dir)
   local excludedPaths = {}
   if deployment and deployment.excludedPaths and #deployment.excludedPaths > 0 then
+    local is_project_config = deployment._is_project_config
+    local local_paths = { project = normalize_local_path(dir), global = dir }
     -- remove cwd from local file path
     local local_path = normalize_local_path(dir)
     for _, excluded in pairs(deployment.excludedPaths) do
       excluded = string.gsub(excluded, "^/", "")
-      if path_matches(excluded, local_path) then
+      if path_matches(excluded, local_path, local_paths[is]) then
         local s, e = string.find(excluded, local_path, 1, true)
         if s then
           excluded = string.sub(excluded, e + 1)
@@ -125,9 +134,13 @@ function M.remote_scp_path(local_path)
   local project_deployment_conf = load_config(project_config_file)
   local global_deployment_conf = load_config(global_config_file)
   local merged_deployment_conf = global_deployment_conf
+  for _, deployment in pairs(merged_deployment_conf) do
+    deployment._config_type = "global"
+  end
   -- Merge configurations, project overrides global
   for name, deployment in pairs(project_deployment_conf) do
     merged_deployment_conf[name] = deployment
+    deployment._config_type = "project"
   end
 
   if vim.tbl_isempty(merged_deployment_conf) then
@@ -143,18 +156,24 @@ function M.remote_scp_path(local_path)
     return nil
   end
 
-  -- remove cwd from local file path
-  local_path = normalize_local_path(local_path)
+  -- Local path is relative to project root for project config, absolute otherwise
+  local local_paths = { project = normalize_local_path(local_path), global = local_path }
 
   local skip_reason
   for name, deployment in pairs(merged_deployment_conf) do
+    local config_type = deployment._config_type
+    local local_path = local_paths[config_type]
+    if config_type == "project" then
+      local_path = normalize_local_path(local_path)
+    end
     local skip = false
     if deployment.excludedPaths ~= nil then
       for _, excluded in pairs(deployment.excludedPaths) do
         excluded = string.gsub(excluded, "^/", "")
-        if path_matches(local_path, excluded) then
+        if path_matches(local_path, excluded, config_type == "project") then
           skip_reason = "File is excluded from deployment\non " .. name .. " by rule: " .. excluded
           skip = true
+          break
         end
       end
     end
@@ -175,7 +194,7 @@ function M.remote_scp_path(local_path)
           end
           return build_scp_path(deployment, remote_file), deployment
         else
-          if path_matches(local_path, mapped) then
+          if path_matches(local_path, mapped, config_type == "project") then
             if local_path:sub(-1) == "/" and mapped:sub(-1) ~= "/" then
               -- if local_path ends with a slash, and mapped does not, add it
               mapped = mapped .. "/"
