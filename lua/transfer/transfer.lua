@@ -214,6 +214,7 @@ function M.upload_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
   local stderr = {}
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
+    id = "transfer_uploading",
     title = "Uploading file...",
     timeout = 0,
     icon = "󱕌 ",
@@ -264,6 +265,7 @@ function M.download_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
 
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
+    id = "transfer_downloading",
     title = "Downloading file...",
     timeout = 0,
     icon = "󱕉 ",
@@ -332,6 +334,7 @@ function M.sync_dir(dir, upload)
   end
 
   local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
+    id = "transfer_sync",
     title = "Sync started...",
     icon = " ",
     timeout = 5000,
@@ -422,6 +425,7 @@ function M.show_dir_diff(dir)
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
   local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
+    id = "transfer_diff",
     title = "Diff started...",
     icon = " ",
     timeout = 3500,
