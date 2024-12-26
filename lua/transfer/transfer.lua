@@ -108,6 +108,7 @@ function M.remote_scp_path(local_path)
       "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
       vim.log.levels.WARN,
       {
+        id = "transfer",
         title = "Transfer.nvim",
         icon = " ",
         timeout = 4000,
@@ -214,7 +215,7 @@ function M.upload_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
   local stderr = {}
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    id = "transfer_uploading",
+    id = "transfer_upload",
     title = "Uploading file...",
     timeout = 0,
     icon = "󱕌 ",
@@ -233,6 +234,7 @@ function M.upload_file(local_path)
     on_exit = function(_, code, _)
       if code == 0 then
         vim.notify(remote_path, vim.log.levels.INFO, {
+          id = "transfer_upload",
           title = "File uploaded",
           icon = "",
           timeout = 3000,
@@ -240,6 +242,7 @@ function M.upload_file(local_path)
         })
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+          id = "transfer_upload",
           title = "Error uploading file",
           timeout = 4000,
           replace = replace,
@@ -265,7 +268,7 @@ function M.download_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
 
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    id = "transfer_downloading",
+    id = "transfer_download",
     title = "Downloading file...",
     timeout = 0,
     icon = "󱕉 ",
@@ -285,6 +288,7 @@ function M.download_file(local_path)
     on_exit = function(_, code, _)
       if code == 0 then
         vim.notify(remote_path, vim.log.levels.INFO, {
+          id = "transfer_download",
           title = "Remote file downloaded",
           icon = "",
           timeout = 1000,
@@ -297,6 +301,7 @@ function M.download_file(local_path)
         end
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+          id = "transfer_download",
           title = "Error downloading file",
           icon = " ",
           timeout = 4000,
@@ -362,6 +367,7 @@ function M.sync_dir(dir, upload)
     on_exit = function(_, code, _)
       if code ~= 0 then
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+          id = "transfer_sync",
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
@@ -389,6 +395,7 @@ function M.sync_dir(dir, upload)
         output = { "No differences found" }
       end
       vim.notify(table.concat(output, "\n"), vim.log.levels.INFO, {
+        id = "transfer_sync",
         timeout = 3000,
         title = "Sync completed",
         icon = " ",
@@ -425,7 +432,7 @@ function M.show_dir_diff(dir)
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
   local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
-    id = "transfer_diff",
+    id = "transfer",
     title = "Diff started...",
     icon = " ",
     timeout = 3500,
@@ -455,6 +462,7 @@ function M.show_dir_diff(dir)
     on_exit = function(_, code, _)
       if code ~= 0 then
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+          id = "transfer",
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
