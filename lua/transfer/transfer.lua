@@ -108,7 +108,6 @@ function M.remote_scp_path(local_path)
       "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
       vim.log.levels.WARN,
       {
-        id = "transfer",
         title = "Transfer.nvim",
         icon = " ",
         timeout = 4000,
@@ -215,14 +214,15 @@ function M.upload_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
   local stderr = {}
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    id = "transfer_upload",
     title = "Uploading file...",
     timeout = 0,
     icon = "󱕌 ",
   })
-  local replace
-  if notification ~= nil and notification.Record then
-    replace = notification.Record
+  local notification_id
+  if type(notification) == "table" and notification.Record then
+      notification_id = notification.Record
+  elseif type(notification) == "number" then
+      notification_id = notification
   end
   vim.fn.jobstart({ "scp", local_path, remote_path }, {
     on_stderr = function(_, data, _)
@@ -234,18 +234,18 @@ function M.upload_file(local_path)
     on_exit = function(_, code, _)
       if code == 0 then
         vim.notify(remote_path, vim.log.levels.INFO, {
-          id = "transfer_upload",
+          id = notification_id,
           title = "File uploaded",
           icon = "",
           timeout = 3000,
-          replace = replace,
+          replace = notification_id,
         })
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = "transfer_upload",
+          id = notification_id,
           title = "Error uploading file",
           timeout = 4000,
-          replace = replace,
+          replace = notification_id,
           icon = " ",
         })
       end
@@ -268,14 +268,15 @@ function M.download_file(local_path)
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
 
   local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    id = "transfer_download",
     title = "Downloading file...",
     timeout = 0,
     icon = "󱕉 ",
   })
-  local replace
-  if notification ~= nil and notification.Record then
-    replace = notification.Record
+  local notification_id
+  if type(notification) == "table" and notification.Record then
+      notification_id = notification.Record
+  elseif type(notification) == "number" then
+      notification_id = notification
   end
   local stderr = {}
   vim.fn.jobstart({ "scp", remote_path, local_path }, {
@@ -288,11 +289,11 @@ function M.download_file(local_path)
     on_exit = function(_, code, _)
       if code == 0 then
         vim.notify(remote_path, vim.log.levels.INFO, {
-          id = "transfer_download",
+          id = notification_id,
           title = "Remote file downloaded",
           icon = "",
           timeout = 1000,
-          replace = replace,
+          replace = notification_id,
         })
         -- reload buffer for the downloaded file
         local bufnr = vim.fn.bufnr(local_path)
@@ -301,11 +302,11 @@ function M.download_file(local_path)
         end
       else
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = "transfer_download",
+          id = notification_id,
           title = "Error downloading file",
           icon = " ",
           timeout = 4000,
-          replace = replace,
+          replace = notification_id,
         })
       end
     end,
@@ -339,14 +340,15 @@ function M.sync_dir(dir, upload)
   end
 
   local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
-    id = "transfer_sync",
     title = "Sync started...",
     icon = " ",
     timeout = 5000,
   })
-  local replace
-  if notification ~= nil and notification.Record then
-    replace = notification.Record
+  local notification_id
+  if type(notification) == "table" and notification.Record then
+      notification_id = notification.Record
+  elseif type(notification) == "number" then
+      notification_id = notification
   end
   local output = {}
   local stderr = {}
@@ -367,11 +369,11 @@ function M.sync_dir(dir, upload)
     on_exit = function(_, code, _)
       if code ~= 0 then
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = "transfer_sync",
+          id = notification_id,
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
-          replace = replace,
+          replace = notification_id,
         })
         return
       end
@@ -395,11 +397,11 @@ function M.sync_dir(dir, upload)
         output = { "No differences found" }
       end
       vim.notify(table.concat(output, "\n"), vim.log.levels.INFO, {
-        id = "transfer_sync",
+        id = notification_id,
         timeout = 3000,
         title = "Sync completed",
         icon = " ",
-        replace = replace,
+        replace = notification_id,
       })
     end,
   })
@@ -432,14 +434,15 @@ function M.show_dir_diff(dir)
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
   local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
-    id = "transfer",
     title = "Diff started...",
     icon = " ",
     timeout = 3500,
   })
-  local replace
-  if notification ~= nil and notification.Record then
-    replace = notification.Record
+  local notification_id
+  if type(notification) == "table" and notification.Record then
+      notification_id = notification.Record
+  elseif type(notification) == "number" then
+      notification_id = notification
   end
   vim.list_extend(lines, { normalize_local_path(dir), remote_path, "------" })
   local output = {}
@@ -462,11 +465,11 @@ function M.show_dir_diff(dir)
     on_exit = function(_, code, _)
       if code ~= 0 then
         vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = "transfer",
+          id = notification_id,
           timeout = 10000,
           title = "Error running rsync",
           icon = " ",
-          replace = replace,
+          replace = notification_id,
         })
         return
       end
