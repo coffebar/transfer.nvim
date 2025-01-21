@@ -219,8 +219,8 @@ function M.upload_file(local_path)
     icon = "󱕌 ",
   })
   local notification_id
-  if type(notification) == "table" and notification.Record then
-      notification_id = notification.Record
+  if type(notification) == "table" and notification.id then
+      notification_id = notification.id
   elseif type(notification) == "number" then
       notification_id = notification
   end
