@@ -65,6 +65,7 @@ local function build_scp_path(deployment, remote_file)
   if deployment.username then
     remote_path = remote_path .. deployment.username .. "@"
   end
+  remote_file = string.gsub(remote_file, "\\", "/")
   remote_path = remote_path .. deployment.host
   remote_path = remote_path .. "/" .. remote_file
   return remote_path
