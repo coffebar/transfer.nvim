@@ -208,13 +208,20 @@ function M.upload_file(local_path)
   else
     local_path = vim.fn.fnamemodify(local_path, ":p")
   end
-  local remote_path = M.remote_scp_path(local_path)
+  local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+  local local_pwd, remote_pwd
+  if config.options.notification and config.options.notification.use_cwd then
+    local_pwd = vim.fn.fnamemodify(local_path, ":."):gsub(".*/", "")
+    remote_pwd = local_pwd
+  else
+    local_pwd = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    remote_pwd = remote_path
+  end
   local stderr = {}
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
+  local notification = vim.notify(local_pwd, vim.log.levels.INFO, {
     title = "Uploading file...",
     timeout = 0,
     icon = "󱕌 ",
@@ -226,7 +233,23 @@ function M.upload_file(local_path)
       notification_id = notification
   end
   vim.fn.jobstart({ "scp", local_path, remote_path }, {
+    pty = true,
+    on_stdout = function(cid, data, _)
+      if string.find(table.concat(data, "\n"), 'password') then
+        if deployment.password then
+          vim.fn.chansend(cid, deployment.password .. '\n')
+        else
+          local password = vim.fn.input('Password')
+          vim.fn.chansend(cid, password .. '\n')
+        end
+      end
+    end,
     on_stderr = function(_, data, _)
+      vim.notify(local_pwd, vim.log.levels.INFO, {
+        title = data,
+        timeout = 0,
+        icon = "󱕌 ",
+      })
       if data == nil or #data == 0 then
         return
       end
@@ -234,7 +257,7 @@ function M.upload_file(local_path)
     end,
     on_exit = function(_, code, _)
       if code == 0 then
-        vim.notify(remote_path, vim.log.levels.INFO, {
+        vim.notify(remote_pwd, vim.log.levels.INFO, {
           id = notification_id,
           title = "File uploaded",
           icon = "",
@@ -242,7 +265,13 @@ function M.upload_file(local_path)
           replace = notification_id,
         })
       else
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+        local message
+        if stderr == nil or #stderr == 0 then
+          message = nil
+        else
+          message = table.concat(stderr, "\n")
+        end
+        vim.notify(message, vim.log.levels.ERROR, {
           id = notification_id,
           title = "Error uploading file",
           timeout = 4000,
@@ -262,13 +291,20 @@ function M.download_file(local_path)
   else
     local_path = vim.fn.fnamemodify(local_path, ":p")
   end
-  local remote_path = M.remote_scp_path(local_path)
+  local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+  local local_pwd, remote_pwd
+  if config.options.notification and config.options.notification.use_cwd then
+    local_pwd = vim.fn.fnamemodify(local_path, ":."):gsub(".*/", "")
+    remote_pwd = local_pwd
+  else
+    local_pwd = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    remote_pwd = remote_path
+  end
 
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
+  local notification = vim.notify(local_pwd, vim.log.levels.INFO, {
     title = "Downloading file...",
     timeout = 0,
     icon = "󱕉 ",
@@ -281,6 +317,17 @@ function M.download_file(local_path)
   end
   local stderr = {}
   vim.fn.jobstart({ "scp", remote_path, local_path }, {
+    pty = true,
+    on_stdout = function(cid, data, _)
+      if string.find(table.concat(data, "\n"), 'password') then
+        if deployment.password then
+          vim.fn.chansend(cid, deployment.password .. '\n')
+        else
+          local password = vim.fn.input('Password')
+          vim.fn.chansend(cid, password .. '\n')
+        end
+      end
+    end,
     on_stderr = function(_, data, _)
       if data == nil or #data == 0 then
         return
@@ -289,7 +336,7 @@ function M.download_file(local_path)
     end,
     on_exit = function(_, code, _)
       if code == 0 then
-        vim.notify(remote_path, vim.log.levels.INFO, {
+        vim.notify(remote_pwd, vim.log.levels.INFO, {
           id = notification_id,
           title = "Remote file downloaded",
           icon = "",
@@ -302,7 +349,13 @@ function M.download_file(local_path)
           reload_buffer(bufnr)
         end
       else
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+        local message
+        if stderr == nil or #stderr == 0 then
+          message = nil
+        else
+          message = table.concat(stderr, "\n")
+        end
+        vim.notify(message, vim.log.levels.ERROR, {
           id = notification_id,
           title = "Error downloading file",
           icon = " ",
@@ -354,6 +407,17 @@ function M.sync_dir(dir, upload)
   local output = {}
   local stderr = {}
   vim.fn.jobstart(cmd, {
+    pty = true,
+    on_stdout = function(cid, data, _)
+      if string.find(table.concat(data, "\n"), 'password') then
+        if deployment.password then
+          vim.fn.chansend(cid, deployment.password .. '\n')
+        else
+          local password = vim.fn.input('Password')
+          vim.fn.chansend(cid, password .. '\n')
+        end
+      end
+    end,
     on_stderr = function(_, data, _)
       if data == nil or #data == 0 then
         return
@@ -369,7 +433,13 @@ function M.sync_dir(dir, upload)
     end,
     on_exit = function(_, code, _)
       if code ~= 0 then
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+        local message
+        if stderr == nil or #stderr == 0 then
+          message = nil
+        else
+          message = table.concat(stderr, "\n")
+        end
+        vim.notify(message, vim.log.levels.ERROR, {
           id = notification_id,
           timeout = 10000,
           title = "Error running rsync",
@@ -449,6 +519,17 @@ function M.show_dir_diff(dir)
   local output = {}
   local stderr = {}
   vim.fn.jobstart(cmd, {
+    pty = true,
+    on_stdout = function(cid, data, _)
+      if string.find(table.concat(data, "\n"), 'password') then
+        if deployment.password then
+          vim.fn.chansend(cid, deployment.password .. '\n')
+        else
+          local password = vim.fn.input('Password')
+          vim.fn.chansend(cid, password .. '\n')
+        end
+      end
+    end,
     on_stderr = function(_, data, _)
       if data == nil or #data == 0 then
         return
