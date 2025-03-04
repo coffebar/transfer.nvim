@@ -323,7 +323,9 @@ local function expand_variables(rsync_params)
       if type(result) == "table" then
         vim.list_extend(new_params, result)
       else
-        table.insert(new_params, result)
+        if result ~= nil and result ~= "" then
+          table.insert(new_params, result)
+        end
       end
     else
       table.insert(new_params, param)
