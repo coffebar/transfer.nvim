@@ -313,6 +313,25 @@ function M.download_file(local_path)
   })
 end
 
+-- Some rsync params can be functions
+local function expand_variables(rsync_params)
+  local new_params = {}
+  -- if param is a function, call it, otherwise just add it
+  for _, param in pairs(rsync_params) do
+    if type(param) == "function" then
+      local result = param()
+      if type(result) == "table" then
+        vim.list_extend(new_params, result)
+      else
+        table.insert(new_params, result)
+      end
+    else
+      table.insert(new_params, param)
+    end
+  end
+  return new_params
+end
+
 -- Sync local and remote directory
 -- @param dir string
 -- @param upload boolean
@@ -326,7 +345,7 @@ function M.sync_dir(dir, upload)
 
   local cmd = { "rsync" }
   if upload then
-    vim.list_extend(cmd, config.options.upload_rsync_params)
+    vim.list_extend(cmd, expand_variables(config.options.upload_rsync_params))
     for _, path in pairs(excluded) do
       vim.list_extend(cmd, { "--exclude", path })
     end
@@ -335,7 +354,7 @@ function M.sync_dir(dir, upload)
     for _, path in pairs(excluded) do
       vim.list_extend(cmd, { "--exclude", path })
     end
-    vim.list_extend(cmd, config.options.download_rsync_params)
+    vim.list_extend(cmd, expand_variables(config.options.download_rsync_params))
     vim.list_extend(cmd, { remote_path .. "/", dir .. "/" })
   end
 
