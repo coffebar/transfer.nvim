@@ -19,7 +19,7 @@ return {
 }
 ]],
   close_diffview_mapping = "<leader>b", -- buffer related mapping to close diffview, set to nil to disable mapping
-  upload_rsync_params = {
+  upload_rsync_params = { -- a table of strings or functions
     "-rlzi",
     "--delete",
     "--checksum",
@@ -34,7 +34,7 @@ return {
     "--exclude",
     "*.pyc",
   },
-  download_rsync_params = {
+  download_rsync_params = { -- a table of strings or functions
     "-rlzi",
     "--delete",
     "--checksum",
