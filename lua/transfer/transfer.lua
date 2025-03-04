@@ -220,9 +220,9 @@ function M.upload_file(local_path)
   })
   local notification_id
   if type(notification) == "table" and notification.id then
-      notification_id = notification.id
+    notification_id = notification.id
   elseif type(notification) == "number" then
-      notification_id = notification
+    notification_id = notification
   end
   vim.fn.jobstart({ "scp", local_path, remote_path }, {
     on_stderr = function(_, data, _)
@@ -274,9 +274,9 @@ function M.download_file(local_path)
   })
   local notification_id
   if type(notification) == "table" and notification.id then
-      notification_id = notification.id
+    notification_id = notification.id
   elseif type(notification) == "number" then
-      notification_id = notification
+    notification_id = notification
   end
   local stderr = {}
   vim.fn.jobstart({ "scp", remote_path, local_path }, {
@@ -346,9 +346,9 @@ function M.sync_dir(dir, upload)
   })
   local notification_id
   if type(notification) == "table" and notification.id then
-      notification_id = notification.id
+    notification_id = notification.id
   elseif type(notification) == "number" then
-      notification_id = notification
+    notification_id = notification
   end
   local output = {}
   local stderr = {}
@@ -440,9 +440,9 @@ function M.show_dir_diff(dir)
   })
   local notification_id
   if type(notification) == "table" and notification.id then
-      notification_id = notification.id
+    notification_id = notification.id
   elseif type(notification) == "number" then
-      notification_id = notification
+    notification_id = notification
   end
   vim.list_extend(lines, { normalize_local_path(dir), remote_path, "------" })
   local output = {}
