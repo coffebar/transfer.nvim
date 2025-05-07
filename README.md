@@ -2,9 +2,13 @@
 
 ## Description
 
-Transfer.nvim is a Neovim plugin for syncing files with remote server using rsync and OpenSSH.
+Transfer.nvim is a lightweight Neovim plugin that lets you manually **upload, download, and diff** files or directories between your local workspace and remote servers via **rsync** and **OpenSSH**.
 
-It supports mapping multiple local and remote paths, excluded path, and more.
+It supports mapping multiple local and remote paths, excluded path, and more. 
+
+Ideal for developers who prefer precise, command-driven deployment workflows. 
+
+Suitable for small projects where there is no need for CI/CD.
 
 ## Install
 
@@ -177,7 +181,9 @@ Feel free to contribute, open issues, and submit pull requests to help us improv
 
 Run tests with `make test`.
 
-## Similar projects
+Follow the Conventional Commits specification for commit naming.
+
+## Related projects
 
 - [KenN7/vim-arsync](https://github.com/KenN7/vim-arsync)
 - [OscarCreator/rsync.nvim](https://github.com/OscarCreator/rsync.nvim)
