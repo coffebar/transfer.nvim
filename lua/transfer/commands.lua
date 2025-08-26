@@ -53,8 +53,14 @@ M.setup = function()
   end, { nargs = 0 })
 
   -- DiffRemote - open a diff view with the remote file
-  vim.api.nvim_create_user_command("DiffRemote", function()
-    local local_path = vim.fn.expand("%:p")
+  vim.api.nvim_create_user_command("DiffRemote", function(opts)
+    local local_path
+    if opts ~= nil and opts.args then
+      local_path = opts.args
+    end
+    if local_path == nil or local_path == "" then
+      local_path = vim.fn.expand("%:p")
+    end
     local remote_path = require("transfer.transfer").remote_scp_path(local_path)
     if remote_path == nil then
       return
@@ -73,7 +79,7 @@ M.setup = function()
     end
 
     vim.api.nvim_command("silent! diffsplit " .. remote_path)
-  end, { nargs = 0 })
+  end, { nargs = "?" })
 
   -- TransferUpload - upload the given file or directory
   vim.api.nvim_create_user_command("TransferUpload", function(opts)
