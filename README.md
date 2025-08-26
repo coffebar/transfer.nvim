@@ -40,6 +40,7 @@ return {
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
+    password = true, -- optional [string|true will prompt for password each time]
     mappings = {
       {
         ["local"] = "live", -- path relative to project root
