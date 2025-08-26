@@ -128,21 +128,24 @@ end
 
 -- get the remote path for scp
 -- @param local_path string
--- @return string
-function M.remote_scp_path(local_path)
+-- @param quiet? boolean
+-- @return string|nil, table|nil
+function M.remote_scp_path(local_path, quiet)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
   if vim.fn.filereadable(config_file) ~= 1 then
-    vim.notify(
-      "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
-      vim.log.levels.WARN,
-      {
-        title = "Transfer.nvim",
-        icon = " ",
-        timeout = 4000,
-      }
-    )
-    return nil
+    if not quiet then
+      vim.notify(
+        "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
+        vim.log.levels.WARN,
+        {
+          title = "Transfer.nvim",
+          icon = " ",
+          timeout = 4000,
+        }
+      )
+    end
+    return nil,nil
   end
   local deployment_conf = dofile(config_file)
   -- remove cwd from local file path
@@ -204,12 +207,14 @@ function M.remote_scp_path(local_path)
   if skip_reason == nil then
     skip_reason = "File '" .. local_path .. "'\nis not mapped in deployment config"
   end
-  vim.notify(skip_reason, vim.log.levels.ERROR, {
-    title = "No mappings found",
-    icon = " ",
-    timeout = 4000,
-  })
-  return nil
+  if not quiet then
+    vim.notify(skip_reason, vim.log.levels.ERROR, {
+      title = "No mappings found",
+      icon = " ",
+      timeout = 4000,
+    })
+  end
+  return nil, nil
 end
 
 -- get the remote path for rsync
@@ -229,8 +234,9 @@ end
 
 -- upload the given file
 -- @param local_path string
+-- @param callback? function
 -- @return void
-function M.upload_file(local_path)
+function M.upload_file(local_path, callback)
   if local_path == nil then
     local_path = vim.fn.expand("%:p")
   else
@@ -238,6 +244,9 @@ function M.upload_file(local_path)
   end
   local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
+    if callback then
+      vim.schedule(callback)
+    end
     return
   end
   local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
@@ -278,6 +287,9 @@ function M.upload_file(local_path)
             replace = notification_id,
             icon = " ",
           })
+        end
+        if callback then
+          vim.schedule(callback)
         end
       end,
     })
