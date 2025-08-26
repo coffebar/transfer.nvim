@@ -174,7 +174,6 @@ https://github.com/coffebar/transfer.nvim/assets/3100053/32cb642a-9040-47dd-a661
 ## Not tested or not working:
 
 - Windows paths;
-- SSH Auth that is not passwordless.
 
 ## Contributing
 
