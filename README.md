@@ -173,12 +173,20 @@ return {
             transfer_down = function(_, item)
               vim.cmd.TransferDownload(item.file)
             end,
+            transfer_diff = function(_, item)
+              if item.dir then
+                vim.cmd.TransferDirDiff(item.file)
+              else
+                vim.cmd.DiffRemote(item.file)
+              end
+            end,
           },
           win = {
             list = {
               keys = {
                 ['tu'] = 'transfer_up',
                 ['td'] = 'transfer_down',
+                ['tD'] = 'transfer_diff',
               }
             }
           }
