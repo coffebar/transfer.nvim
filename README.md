@@ -40,6 +40,7 @@ return {
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
+    password = true, -- optional (string|true will prompt for password)
     mappings = {
       {
         ["local"] = "live", -- path relative to project root
@@ -150,6 +151,43 @@ require("which-key").add({
     icon = { color = "green", icon = "󰕒" },
   },
 })
+```
+
+## Snacks.explorer (with lazy.nvim)
+
+```lua
+return {
+  "coffebar/transfer.nvim",
+  lazy = true,
+  cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
+  opts = {},
+  dependencies = { 'folke/snacks.nvim' },
+  specs = {
+    {
+      'folke/snacks.nvim',
+      opts = {
+        picker = {
+          actions = {
+            transfer_up = function(_, item)
+              vim.cmd.TransferUpload(item.file)
+            end,
+            transfer_down = function(_, item)
+              vim.cmd.TransferDownload(item.file)
+            end,
+          },
+          win = {
+            list = {
+              keys = {
+                ['tu'] = 'transfer_up',
+                ['td'] = 'transfer_down',
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ## Recommended to use with
