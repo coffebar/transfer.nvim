@@ -40,6 +40,7 @@ return {
   ["example_name"] = {
     host = "myhost",
     username = "web", -- optional
+    password = true, -- optional [string|true will prompt for password each time]
     mappings = {
       {
         ["local"] = "live", -- path relative to project root
@@ -54,6 +55,7 @@ return {
       "live/src/", -- local path relative to project root
       "test/src/",
     },
+    upload_on_save = false
   },
 }
 ```
@@ -152,6 +154,43 @@ require("which-key").add({
 })
 ```
 
+## Snacks.explorer (with lazy.nvim)
+
+```lua
+return {
+  "coffebar/transfer.nvim",
+  lazy = true,
+  cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
+  opts = {},
+  dependencies = { 'folke/snacks.nvim' },
+  specs = {
+    {
+      'folke/snacks.nvim',
+      opts = {
+        picker = {
+          actions = {
+            transfer_up = function(_, item)
+              vim.cmd.TransferUpload(item.file)
+            end,
+            transfer_down = function(_, item)
+              vim.cmd.TransferDownload(item.file)
+            end,
+          },
+          win = {
+            list = {
+              keys = {
+                ['tu'] = 'transfer_up',
+                ['td'] = 'transfer_down',
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ## Recommended to use with
 
 - [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify) - animated popup notifications.
@@ -173,7 +212,6 @@ https://github.com/coffebar/transfer.nvim/assets/3100053/32cb642a-9040-47dd-a661
 ## Not tested or not working:
 
 - Windows paths;
-- SSH Auth that is not passwordless.
 
 ## Contributing
 

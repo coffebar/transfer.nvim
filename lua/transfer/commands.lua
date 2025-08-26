@@ -1,6 +1,7 @@
 local M = {}
 
 M.recent_command = nil
+M.saving = {}
 
 local function create_autocmd()
   local augroup = vim.api.nvim_create_augroup("TransferNvim", { clear = true })
@@ -10,6 +11,26 @@ local function create_autocmd()
     desc = "Clear recent command after changing directory",
     callback = function()
       M.recent_command = nil
+    end,
+  })
+
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    group = augroup,
+    desc = "Upload on Save",
+    callback = function(args)
+      if M.saving[args.file] then
+        return
+      end
+      M.saving[args.file] = true
+      local plugin = require"transfer.transfer"
+      local _, deployment = plugin.remote_scp_path(args.file, true)
+      if deployment and deployment.upload_on_save then
+        plugin.upload_file(args.file, function()
+            M.saving[args.file] = nil
+        end)
+      else
+        M.saving[args.file] = nil
+      end
     end,
   })
 end
@@ -53,8 +74,14 @@ M.setup = function()
   end, { nargs = 0 })
 
   -- DiffRemote - open a diff view with the remote file
-  vim.api.nvim_create_user_command("DiffRemote", function()
-    local local_path = vim.fn.expand("%:p")
+  vim.api.nvim_create_user_command("DiffRemote", function(opts)
+    local local_path
+    if opts ~= nil and opts.args then
+      local_path = opts.args
+    end
+    if local_path == nil or local_path == "" then
+      local_path = vim.fn.expand("%:p")
+    end
     local remote_path = require("transfer.transfer").remote_scp_path(local_path)
     if remote_path == nil then
       return
@@ -73,7 +100,7 @@ M.setup = function()
     end
 
     vim.api.nvim_command("silent! diffsplit " .. remote_path)
-  end, { nargs = 0 })
+  end, { nargs = "?" })
 
   -- TransferUpload - upload the given file or directory
   vim.api.nvim_create_user_command("TransferUpload", function(opts)
