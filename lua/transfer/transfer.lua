@@ -2,6 +2,8 @@ local config = require("transfer.config")
 
 local M = {}
 
+M._saving = {}
+
 -- reloads the buffer after a transfer
 -- refreshes the neo-tree if the buffer is a neo-tree
 -- @param bufnr number
@@ -76,38 +78,47 @@ end
 -- @param callback function
 -- @return table
 local function build_command(deployment, command, callback)
-  -- @param password string?
-  local function _build(password)
-    local _command = {}
-    if password and password ~= '' then
-      _command = { "sshpass", "-p", password }
-      vim.list_extend(_command, command)
-    else
-      _command = command
-    end
-    vim.schedule_wrap(callback)(_command)
+  if not deployment.password then
+    callback(command)
+    return
   end
 
-  if deployment.password then
-    if vim.fn.executable('sshpass') ~= 1 then
-      vim.notify('Password-based authentication requires `sshpass`', vim.log.levels.ERROR)
-      return
-    end
-    if deployment.password == true then
-      vim.ui.input({prompt="Password for "..deployment.host}, function(input)
-        if not input or input == '' then
-          vim.schedule(function()
-            vim.notify('No password was entered, cancelling', vim.log.levels.ERROR)
-          end)
-        else
-          _build(input)
-        end
-      end)
-    else
-      _build(deployment.password)
-    end
+  if deployment.password ~= true and type(deployment.password) ~= "string" then
+    vim.notify('Password must be either a `string` or `true`', vim.log.levels.ERROR)
+    callback(false)
+    return
+  end
+
+  if vim.fn.executable('sshpass') ~= 1 then
+    vim.notify('Password-based authentication requires `sshpass`', vim.log.levels.ERROR)
+    callback(false)
+    return
+  end
+
+  -- @param password string
+  local function _build(password)
+    local _command = { "sshpass", "-p", password }
+    vim.list_extend(_command, command)
+    callback(_command)
+  end
+
+  local function _prompt()
+    vim.ui.input({prompt="Password for "..deployment.host}, function(input)
+      if not input or input == '' then
+        vim.schedule(function()
+          vim.notify('No password was entered, cancelling', vim.log.levels.ERROR)
+          callback(false)
+        end)
+      else
+        _build(input)
+      end
+    end)
+  end
+
+  if type(deployment.password) == 'string' then
+    _build(deployment.password)
   else
-    vim.schedule_wrap(callback)(command)
+    vim.defer_fn(_prompt, 500) -- defer to ensure input gets focus
   end
 end
 
@@ -140,21 +151,24 @@ end
 
 -- get the remote path for scp
 -- @param local_path string
+-- @param quiet? boolean
 -- @return string, table
-function M.remote_scp_path(local_path)
+function M.remote_scp_path(local_path, quiet)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
   if vim.fn.filereadable(config_file) ~= 1 then
-    vim.notify(
-      "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
-      vim.log.levels.WARN,
-      {
-        title = "Transfer.nvim",
-        icon = " ",
-        timeout = 4000,
-      }
-    )
-    return nil
+    if not quiet then
+      vim.notify(
+        "No deployment config found in \n" .. config_file .. "\n\nRun `:TransferInit` to create it",
+        vim.log.levels.WARN,
+        {
+          title = "Transfer.nvim",
+          icon = " ",
+          timeout = 4000,
+        }
+      )
+    end
+    return nil,nil
   end
   local deployment_conf = dofile(config_file)
   -- remove cwd from local file path
@@ -216,12 +230,14 @@ function M.remote_scp_path(local_path)
   if skip_reason == nil then
     skip_reason = "File '" .. local_path .. "'\nis not mapped in deployment config"
   end
-  vim.notify(skip_reason, vim.log.levels.ERROR, {
-    title = "No mappings found",
-    icon = " ",
-    timeout = 4000,
-  })
-  return nil
+  if not quiet then
+    vim.notify(skip_reason, vim.log.levels.ERROR, {
+      title = "No mappings found",
+      icon = " ",
+      timeout = 4000,
+    })
+  end
+  return nil, nil
 end
 
 -- get the remote path for rsync
@@ -239,10 +255,42 @@ function M.remote_rsync_path(local_path)
   return remote_path, deployment
 end
 
--- upload the given file
+-- upload the given file on BufWritePost event
 -- @param local_path string
 -- @return void
-function M.upload_file(local_path)
+function M.upload_on_save(local_path)
+  if M._saving[local_path] then
+    return
+  end
+  M._saving[local_path] = true
+
+  local function _finished()
+    M._saving[local_path] = nil
+  end
+
+  local function _upload()
+    local _,deployment = M.remote_scp_path(local_path, true)
+    if deployment and deployment.upload_on_save == true then
+      M.upload_file(local_path, _finished)
+    else
+      _finished()
+    end
+  end
+
+  local ok, result = pcall(_upload)
+  if not ok then
+    _finished()
+    vim.schedule(function()
+      vim.notify("Error uploading file\n"..tostring(result), vim.log.levels.ERROR)
+    end)
+  end
+end
+
+-- upload the given file
+-- @param local_path string
+-- @param callback? function
+-- @return void
+function M.upload_file(local_path, callback)
   if local_path == nil then
     local_path = vim.fn.expand("%:p")
   else
@@ -250,10 +298,20 @@ function M.upload_file(local_path)
   end
   local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
+    if callback then
+      callback()
+    end
     return
   end
 
   build_command(deployment, { "scp", local_path, remote_path }, function(command)
+    if not command then
+      if callback then
+        vim.schedule(callback)
+      end
+      return
+    end
+
     local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
     local notification = vim.notify(local_short, vim.log.levels.INFO, {
       title = "Uploading file...",
@@ -276,6 +334,10 @@ function M.upload_file(local_path)
         vim.list_extend(stderr, data)
       end,
       on_exit = function(_, code, _)
+        if callback then
+          vim.schedule(callback)
+        end
+
         if code == 0 then
           vim.notify(remote_path, vim.log.levels.INFO, {
             id = notification_id,
@@ -312,6 +374,10 @@ function M.download_file(local_path)
   end
 
   build_command(deployment, { "scp", remote_path, local_path }, function(command)
+    if not command then
+      return
+    end
+
     local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
     local notification = vim.notify(local_short, vim.log.levels.INFO, {
       title = "Downloading file...",
@@ -409,6 +475,10 @@ function M.sync_dir(dir, upload)
   end
 
   build_command(deployment, cmd, function(command)
+    if not command then
+      return
+    end
+
     local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
       title = "Sync started...",
       icon = " ",
@@ -506,6 +576,10 @@ function M.show_dir_diff(dir)
   local lines = { " " .. table.concat(cmd, " "), normalize_local_path(dir), remote_path, "------" }
 
   build_command(deployment, cmd, function(command)
+    if not command then
+      return
+    end
+
     local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
       title = "Diff started...",
       icon = " ",

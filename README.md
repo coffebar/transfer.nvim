@@ -55,6 +55,7 @@ return {
       "live/src/", -- local path relative to project root
       "test/src/",
     },
+    upload_on_save = false
   },
 }
 ```

@@ -12,6 +12,14 @@ local function create_autocmd()
       M.recent_command = nil
     end,
   })
+
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    group = augroup,
+    desc = "Upload on Save",
+    callback = function(args)
+      require"transfer.transfer".upload_on_save(args.file)
+    end,
+  })
 end
 
 M.setup = function()
