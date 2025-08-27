@@ -185,6 +185,51 @@ require("which-key").add({
 })
 ```
 
+## Snacks.explorer (with lazy.nvim)
+
+```lua
+return {
+  "coffebar/transfer.nvim",
+  lazy = true,
+  cmd = { "TransferInit", "DiffRemote", "TransferUpload", "TransferDownload", "TransferDirDiff", "TransferRepeat" },
+  opts = {},
+  dependencies = { 'folke/snacks.nvim' },
+  specs = {
+    {
+      'folke/snacks.nvim',
+      opts = {
+        picker = {
+          actions = {
+            transfer_up = function(_, item)
+              vim.cmd.TransferUpload(item.file)
+            end,
+            transfer_down = function(_, item)
+              vim.cmd.TransferDownload(item.file)
+            end,
+            transfer_diff = function(_, item)
+              if item.dir then
+                vim.cmd.TransferDirDiff(item.file)
+              else
+                vim.cmd.DiffRemote(item.file)
+              end
+            end,
+          },
+          win = {
+            list = {
+              keys = {
+                ['tu'] = 'transfer_up',
+                ['td'] = 'transfer_down',
+                ['tD'] = 'transfer_diff',
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ## Recommended to use with
 
 - [rcarriga/nvim-notify](https://github.com/rcarriga/nvim-notify) - animated popup notifications.
