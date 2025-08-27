@@ -1,7 +1,6 @@
 local M = {}
 
 M.recent_command = nil
-M.saving = {}
 
 local function create_autocmd()
   local augroup = vim.api.nvim_create_augroup("TransferNvim", { clear = true })
@@ -18,19 +17,7 @@ local function create_autocmd()
     group = augroup,
     desc = "Upload on Save",
     callback = function(args)
-      if M.saving[args.file] then
-        return
-      end
-      M.saving[args.file] = true
-      local plugin = require"transfer.transfer"
-      local _, deployment = plugin.remote_scp_path(args.file, true)
-      if deployment and deployment.upload_on_save then
-        plugin.upload_file(args.file, function()
-            M.saving[args.file] = nil
-        end)
-      else
-        M.saving[args.file] = nil
-      end
+      require"transfer.transfer".upload_on_save(args.file)
     end,
   })
 end
