@@ -77,7 +77,7 @@ end
 -- @return table
 local function build_command(deployment, command, callback)
   -- @param password string?
-  local function build(password)
+  local function _build(password)
     local _command = {}
     if password and password ~= '' then
       _command = { "sshpass", "-p", password }
@@ -89,10 +89,22 @@ local function build_command(deployment, command, callback)
   end
 
   if deployment.password then
+    if vim.fn.executable('sshpass') ~= 1 then
+      vim.notify('Password-based authentication requires `sshpass`', vim.log.levels.ERROR)
+      return
+    end
     if deployment.password == true then
-      vim.ui.input({prompt="Password for "..deployment.username.."@"..deployment.host}, build)
+      vim.ui.input({prompt="Password for "..deployment.host}, function(input)
+        if not input or input == '' then
+          vim.schedule(function()
+            vim.notify('No password was entered, cancelling', vim.log.levels.ERROR)
+          end)
+        else
+          _build(input)
+        end
+      end)
     else
-      build(deployment.password)
+      _build(deployment.password)
     end
   else
     vim.schedule_wrap(callback)(command)
@@ -249,20 +261,22 @@ function M.upload_file(local_path, callback)
     end
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
-  local stderr = {}
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    title = "Uploading file...",
-    timeout = 0,
-    icon = "󱕌 ",
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
+
   build_command(deployment, { "scp", local_path, remote_path }, function(command)
+    local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    local notification = vim.notify(local_short, vim.log.levels.INFO, {
+      title = "Uploading file...",
+      timeout = 0,
+      icon = "󱕌 ",
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local stderr = {}
     vim.fn.jobstart(command, {
       on_stderr = function(_, data, _)
         if data == nil or #data == 0 then
@@ -308,21 +322,22 @@ function M.download_file(local_path)
   if remote_path == nil then
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
 
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    title = "Downloading file...",
-    timeout = 0,
-    icon = "󱕉 ",
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  local stderr = {}
   build_command(deployment, { "scp", remote_path, local_path }, function(command)
+    local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    local notification = vim.notify(local_short, vim.log.levels.INFO, {
+      title = "Downloading file...",
+      timeout = 0,
+      icon = "󱕉 ",
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local stderr = {}
     vim.fn.jobstart(command, {
       on_stderr = function(_, data, _)
         if data == nil or #data == 0 then
@@ -405,20 +420,21 @@ function M.sync_dir(dir, upload)
     vim.list_extend(cmd, { remote_path .. "/", dir .. "/" })
   end
 
-  local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
-    title = "Sync started...",
-    icon = " ",
-    timeout = 5000,
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  local output = {}
-  local stderr = {}
   build_command(deployment, cmd, function(command)
+    local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
+      title = "Sync started...",
+      icon = " ",
+      timeout = 5000,
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local output = {}
+    local stderr = {}
     vim.fn.jobstart(command, {
       on_stderr = function(_, data, _)
         if data == nil or #data == 0 then
@@ -497,25 +513,25 @@ function M.show_dir_diff(dir)
       end
     end
   end
-
-  local lines = { " " .. table.concat(cmd, " ") }
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
-  local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
-    title = "Diff started...",
-    icon = " ",
-    timeout = 3500,
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  vim.list_extend(lines, { normalize_local_path(dir), remote_path, "------" })
-  local output = {}
-  local stderr = {}
+  local lines = { " " .. table.concat(cmd, " "), normalize_local_path(dir), remote_path, "------" }
+
   build_command(deployment, cmd, function(command)
+    local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
+      title = "Diff started...",
+      icon = " ",
+      timeout = 3500,
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local output = {}
+    local stderr = {}
     vim.fn.jobstart(command, {
       on_stderr = function(_, data, _)
         if data == nil or #data == 0 then
