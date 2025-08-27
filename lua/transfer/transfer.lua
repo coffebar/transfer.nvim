@@ -70,6 +70,47 @@ local function build_scp_path(deployment, remote_file)
   return remote_path
 end
 
+-- build command with sshpass if needed
+-- @param deployment table
+-- @param command table
+-- @param callback function
+-- @return table
+local function build_command(deployment, command, callback)
+  -- @param password string?
+  local function _build(password)
+    local _command = {}
+    if password and password ~= '' then
+      _command = { "sshpass", "-p", password }
+      vim.list_extend(_command, command)
+    else
+      _command = command
+    end
+    vim.schedule_wrap(callback)(_command)
+  end
+
+  if deployment.password then
+    if vim.fn.executable('sshpass') ~= 1 then
+      vim.notify('Password-based authentication requires `sshpass`', vim.log.levels.ERROR)
+      return
+    end
+    if deployment.password == true then
+      vim.ui.input({prompt="Password for "..deployment.host}, function(input)
+        if not input or input == '' then
+          vim.schedule(function()
+            vim.notify('No password was entered, cancelling', vim.log.levels.ERROR)
+          end)
+        else
+          _build(input)
+        end
+      end)
+    else
+      _build(deployment.password)
+    end
+  else
+    vim.schedule_wrap(callback)(command)
+  end
+end
+
 -- get the excluded paths for the given directory
 -- @param deployment table
 -- @param dir string
@@ -99,7 +140,7 @@ end
 
 -- get the remote path for scp
 -- @param local_path string
--- @return string
+-- @return string, table
 function M.remote_scp_path(local_path)
   local cwd = vim.loop.cwd()
   local config_file = cwd .. "/.nvim/deployment.lua"
@@ -207,50 +248,54 @@ function M.upload_file(local_path)
   else
     local_path = vim.fn.fnamemodify(local_path, ":p")
   end
-  local remote_path = M.remote_scp_path(local_path)
+  local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
-  local stderr = {}
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    title = "Uploading file...",
-    timeout = 0,
-    icon = "󱕌 ",
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  vim.fn.jobstart({ "scp", local_path, remote_path }, {
-    on_stderr = function(_, data, _)
-      if data == nil or #data == 0 then
-        return
-      end
-      vim.list_extend(stderr, data)
-    end,
-    on_exit = function(_, code, _)
-      if code == 0 then
-        vim.notify(remote_path, vim.log.levels.INFO, {
-          id = notification_id,
-          title = "File uploaded",
-          icon = "",
-          timeout = 3000,
-          replace = notification_id,
-        })
-      else
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = notification_id,
-          title = "Error uploading file",
-          timeout = 4000,
-          replace = notification_id,
-          icon = " ",
-        })
-      end
-    end,
-  })
+
+  build_command(deployment, { "scp", local_path, remote_path }, function(command)
+    local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    local notification = vim.notify(local_short, vim.log.levels.INFO, {
+      title = "Uploading file...",
+      timeout = 0,
+      icon = "󱕌 ",
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local stderr = {}
+    vim.fn.jobstart(command, {
+      on_stderr = function(_, data, _)
+        if data == nil or #data == 0 then
+          return
+        end
+        vim.list_extend(stderr, data)
+      end,
+      on_exit = function(_, code, _)
+        if code == 0 then
+          vim.notify(remote_path, vim.log.levels.INFO, {
+            id = notification_id,
+            title = "File uploaded",
+            icon = "",
+            timeout = 3000,
+            replace = notification_id,
+          })
+        else
+          vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+            id = notification_id,
+            title = "Error uploading file",
+            timeout = 4000,
+            replace = notification_id,
+            icon = " ",
+          })
+        end
+      end,
+    })
+  end)
 end
 
 -- Replace local file with remote copy
@@ -261,56 +306,59 @@ function M.download_file(local_path)
   else
     local_path = vim.fn.fnamemodify(local_path, ":p")
   end
-  local remote_path = M.remote_scp_path(local_path)
+  local remote_path, deployment = M.remote_scp_path(local_path)
   if remote_path == nil then
     return
   end
-  local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
 
-  local notification = vim.notify(local_short, vim.log.levels.INFO, {
-    title = "Downloading file...",
-    timeout = 0,
-    icon = "󱕉 ",
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  local stderr = {}
-  vim.fn.jobstart({ "scp", remote_path, local_path }, {
-    on_stderr = function(_, data, _)
-      if data == nil or #data == 0 then
-        return
-      end
-      vim.list_extend(stderr, data)
-    end,
-    on_exit = function(_, code, _)
-      if code == 0 then
-        vim.notify(remote_path, vim.log.levels.INFO, {
-          id = notification_id,
-          title = "Remote file downloaded",
-          icon = "",
-          timeout = 1000,
-          replace = notification_id,
-        })
-        -- reload buffer for the downloaded file
-        local bufnr = vim.fn.bufnr(local_path)
-        if bufnr ~= -1 then
-          reload_buffer(bufnr)
+  build_command(deployment, { "scp", remote_path, local_path }, function(command)
+    local local_short = vim.fn.fnamemodify(local_path, ":~"):gsub(".*/", "")
+    local notification = vim.notify(local_short, vim.log.levels.INFO, {
+      title = "Downloading file...",
+      timeout = 0,
+      icon = "󱕉 ",
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local stderr = {}
+    vim.fn.jobstart(command, {
+      on_stderr = function(_, data, _)
+        if data == nil or #data == 0 then
+          return
         end
-      else
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = notification_id,
-          title = "Error downloading file",
-          icon = " ",
-          timeout = 4000,
-          replace = notification_id,
-        })
-      end
-    end,
-  })
+        vim.list_extend(stderr, data)
+      end,
+      on_exit = function(_, code, _)
+        if code == 0 then
+          vim.notify(remote_path, vim.log.levels.INFO, {
+            id = notification_id,
+            title = "Remote file downloaded",
+            icon = "",
+            timeout = 1000,
+            replace = notification_id,
+          })
+          -- reload buffer for the downloaded file
+          local bufnr = vim.fn.bufnr(local_path)
+          if bufnr ~= -1 then
+            reload_buffer(bufnr)
+          end
+        else
+          vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+            id = notification_id,
+            title = "Error downloading file",
+            icon = " ",
+            timeout = 4000,
+            replace = notification_id,
+          })
+        end
+      end,
+    })
+  end)
 end
 
 -- Some rsync params can be functions
@@ -360,72 +408,75 @@ function M.sync_dir(dir, upload)
     vim.list_extend(cmd, { remote_path .. "/", dir .. "/" })
   end
 
-  local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
-    title = "Sync started...",
-    icon = " ",
-    timeout = 5000,
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  local output = {}
-  local stderr = {}
-  vim.fn.jobstart(cmd, {
-    on_stderr = function(_, data, _)
-      if data == nil or #data == 0 then
-        return
-      end
-      vim.list_extend(stderr, data)
-    end,
-    on_stdout = function(_, data, _)
-      for _, line in pairs(data) do
-        if line ~= "" then
-          table.insert(output, line)
-        end
-      end
-    end,
-    on_exit = function(_, code, _)
-      if code ~= 0 then
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = notification_id,
-          timeout = 10000,
-          title = "Error running rsync",
-          icon = " ",
-          replace = notification_id,
-        })
-        return
-      end
+  build_command(deployment, cmd, function(command)
+    local notification = vim.notify("rsync: " .. remote_path, vim.log.levels.INFO, {
+      title = "Sync started...",
+      icon = " ",
+      timeout = 5000,
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
 
-      if not upload then
-        local filetype = vim.api.nvim_buf_get_option(0, "filetype")
-        if filetype == "neo-tree" then
-          reload_buffer(0)
+    local output = {}
+    local stderr = {}
+    vim.fn.jobstart(command, {
+      on_stderr = function(_, data, _)
+        if data == nil or #data == 0 then
+          return
         end
-        -- reload all buffers in the synced directory
-        local buffers = vim.api.nvim_list_bufs()
-        for _, bufnr in pairs(buffers) do
-          local bufname = vim.api.nvim_buf_get_name(bufnr)
-          if bufname ~= "" and bufname:find(dir, 1, true) then
-            reload_buffer(bufnr)
+        vim.list_extend(stderr, data)
+      end,
+      on_stdout = function(_, data, _)
+        for _, line in pairs(data) do
+          if line ~= "" then
+            table.insert(output, line)
           end
         end
-      end
+      end,
+      on_exit = function(_, code, _)
+        if code ~= 0 then
+          vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+            id = notification_id,
+            timeout = 10000,
+            title = "Error running rsync",
+            icon = " ",
+            replace = notification_id,
+          })
+          return
+        end
 
-      if #output == 0 then
-        output = { "No differences found" }
-      end
-      vim.notify(table.concat(output, "\n"), vim.log.levels.INFO, {
-        id = notification_id,
-        timeout = 3000,
-        title = "Sync completed",
-        icon = " ",
-        replace = notification_id,
-      })
-    end,
-  })
+        if not upload then
+          local filetype = vim.api.nvim_buf_get_option(0, "filetype")
+          if filetype == "neo-tree" then
+            reload_buffer(0)
+          end
+          -- reload all buffers in the synced directory
+          local buffers = vim.api.nvim_list_bufs()
+          for _, bufnr in pairs(buffers) do
+            local bufname = vim.api.nvim_buf_get_name(bufnr)
+            if bufname ~= "" and bufname:find(dir, 1, true) then
+              reload_buffer(bufnr)
+            end
+          end
+        end
+
+        if #output == 0 then
+          output = { "No differences found" }
+        end
+        vim.notify(table.concat(output, "\n"), vim.log.levels.INFO, {
+          id = notification_id,
+          timeout = 3000,
+          title = "Sync completed",
+          icon = " ",
+          replace = notification_id,
+        })
+      end,
+    })
+  end)
 end
 
 function M.show_dir_diff(dir)
@@ -450,60 +501,62 @@ function M.show_dir_diff(dir)
       end
     end
   end
-
-  local lines = { " " .. table.concat(cmd, " ") }
   vim.list_extend(cmd, { dir .. "/", remote_path .. "/" })
 
-  local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
-    title = "Diff started...",
-    icon = " ",
-    timeout = 3500,
-  })
-  local notification_id
-  if type(notification) == "table" and notification.id then
-    notification_id = notification.id
-  elseif type(notification) == "number" then
-    notification_id = notification
-  end
-  vim.list_extend(lines, { normalize_local_path(dir), remote_path, "------" })
-  local output = {}
-  local stderr = {}
-  vim.fn.jobstart(cmd, {
-    on_stderr = function(_, data, _)
-      if data == nil or #data == 0 then
-        return
-      end
-      vim.list_extend(stderr, data)
-    end,
-    on_stdout = function(_, data, _)
-      for _, line in pairs(data) do
-        if line ~= "" then
-          line = line:gsub("^deleting ", " ")
-          table.insert(output, line)
+  local lines = { " " .. table.concat(cmd, " "), normalize_local_path(dir), remote_path, "------" }
+
+  build_command(deployment, cmd, function(command)
+    local notification = vim.notify("rsync -rlzi --dry-run --checksum --delete", vim.log.levels.INFO, {
+      title = "Diff started...",
+      icon = " ",
+      timeout = 3500,
+    })
+    local notification_id
+    if type(notification) == "table" and notification.id then
+      notification_id = notification.id
+    elseif type(notification) == "number" then
+      notification_id = notification
+    end
+
+    local output = {}
+    local stderr = {}
+    vim.fn.jobstart(command, {
+      on_stderr = function(_, data, _)
+        if data == nil or #data == 0 then
+          return
         end
-      end
-    end,
-    on_exit = function(_, code, _)
-      if code ~= 0 then
-        vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
-          id = notification_id,
-          timeout = 10000,
-          title = "Error running rsync",
-          icon = " ",
-          replace = notification_id,
-        })
-        return
-      end
-      if #output == 0 then
-        table.insert(lines, " No differences found")
-      else
-        vim.list_extend(lines, output)
-      end
-      -- show quickfix list
-      vim.fn.setqflist({}, "r", { title = "Diff: " .. dir, lines = lines })
-      vim.api.nvim_command("copen")
-    end,
-  })
+        vim.list_extend(stderr, data)
+      end,
+      on_stdout = function(_, data, _)
+        for _, line in pairs(data) do
+          if line ~= "" then
+            line = line:gsub("^deleting ", " ")
+            table.insert(output, line)
+          end
+        end
+      end,
+      on_exit = function(_, code, _)
+        if code ~= 0 then
+          vim.notify(table.concat(stderr, "\n"), vim.log.levels.ERROR, {
+            id = notification_id,
+            timeout = 10000,
+            title = "Error running rsync",
+            icon = " ",
+            replace = notification_id,
+          })
+          return
+        end
+        if #output == 0 then
+          table.insert(lines, " No differences found")
+        else
+          vim.list_extend(lines, output)
+        end
+        -- show quickfix list
+        vim.fn.setqflist({}, "r", { title = "Diff: " .. dir, lines = lines })
+        vim.api.nvim_command("copen")
+      end,
+    })
+  end)
 end
 
 return M
