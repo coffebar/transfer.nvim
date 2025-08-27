@@ -72,6 +72,37 @@ Host server2
   ...
 ```
 
+Finally, you need to be sure to login to the host interactively at least one time and accept the host fingerprint, to ensure the remote host fingerprint exists in your local `~/.ssh/known_hosts` file, otherwise the remote operations will appear to hang and timeout while your local client waits for you to accept the new remote host fingerprint in the background.
+
+If you are using an ephemeral remote host for development purposes, where you expect the remote host fingerprint to change regularly, (AND YOU ARE ABSOLUTELY SURE YOU TRUST THE REMOTE!) you can add the following items to your `~/.ssh/config` file for a specific remote host:
+
+```ssh
+Host myhost
+  ...
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+```
+
+**Password-based Authentication**
+
+The `sshpass` utility is a required dependency when using password-based authentication. Be sure `sshpass` is installed and available in your `PATH`.
+
+There are three possible values for the `password` item in a deployment/mapping table:
+
+- `password=true`: you will be prompted to enter a password for each operation.
+- `password="mypassword"`: the password will be set automatically with `sshpass` for each operation.
+- `password=""`: an empty password will be used for each operation.
+
+Example `-/.ssh/config` for password-based auth:
+
+```ssh
+Host myhost
+  HostName 127.0.0.1
+  User web
+  PubkeyAuthentication=no
+  PreferredAuthentications=password
+```
+
 ## Suggested mappings
 
 ### Neo-tree
