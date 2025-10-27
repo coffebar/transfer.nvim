@@ -81,7 +81,7 @@ M.setup = function()
         desc = "Add mapping to close diffview",
         once = true,
         callback = function()
-          vim.keymap.set("n", config.options.close_diffview_mapping, "<cmd>diffoff | bd!<cr>", { buffer = true })
+          vim.keymap.set("n", config.options.close_diffview_mapping, "<cmd>diffoff | bd! | diffoff<cr>", { buffer = true , desc = "Close Diffview"})
         end,
       })
     end
