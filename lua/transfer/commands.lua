@@ -17,7 +17,7 @@ local function create_autocmd()
     group = augroup,
     desc = "Upload on Save",
     callback = function(args)
-      require"transfer.transfer".upload_on_save(args.file)
+      require("transfer.transfer").upload_on_save(args.file)
     end,
   })
 end
@@ -75,17 +75,26 @@ M.setup = function()
     end
 
     local config = require("transfer.config")
+    local orig_win = vim.api.nvim_get_current_win()
+
     if config.options.close_diffview_mapping ~= nil then
       vim.api.nvim_create_autocmd("BufEnter", {
         pattern = { remote_path },
         desc = "Add mapping to close diffview",
         once = true,
         callback = function()
-          vim.keymap.set("n", config.options.close_diffview_mapping, "<cmd>diffoff | bd! | diffoff<cr>", { buffer = true , desc = "Close Diffview"})
+          vim.keymap.set("n", config.options.close_diffview_mapping, function()
+            if vim.api.nvim_win_is_valid(orig_win) then
+              vim.api.nvim_win_call(orig_win, function()
+                vim.cmd("diffoff")
+              end)
+            end
+            vim.cmd("diffoff")
+            vim.cmd("bd!")
+          end, { buffer = true, desc = "Close Diffview" })
         end,
       })
     end
-
     vim.api.nvim_command("silent! diffsplit " .. remote_path)
   end, { nargs = "?" })
 
