@@ -73,6 +73,24 @@ return {
     assert.equals("scp://server1//var/www/example.com/index.js", remote_scp_path(cwd .. "/example.com/index.js"))
     assert.equals("scp://server1/Docker", remote_scp_path(cwd .. "/Docker"))
     assert.equals("scp://server1/doc/", remote_scp_path(cwd .. "/doc/"))
+    assert.equals("scp://server1/", remote_scp_path(cwd))
+    assert.equals("scp://server1/", remote_scp_path(cwd .. "/"))
+    -- A sibling with a shared name prefix must not be shortened as a child.
+    local sibling = vim.fs.normalize(cwd .. "-backup/Menu.vue")
+    assert.equals("scp://server1/" .. sibling:gsub("^/", ""), remote_scp_path(sibling))
+    if vim.fn.has("win32") == 1 then
+      local windows_path = vim.fn.tolower(cwd):gsub("/", "\\")
+      assert.equals("scp://server1/Menu.vue", remote_scp_path(windows_path .. "\\Menu.vue"))
+      assert.equals("scp://server1/doc/", remote_scp_path(windows_path .. "\\doc\\"))
+      assert.equals("scp://server1/Menu.vue", remote_scp_path(vim.fn.toupper(cwd) .. "/Menu.vue"))
+    else
+      -- On Unix, changing the case of a directory does not identify the same path.
+      local different_case = vim.fn.toupper(cwd)
+      if different_case ~= cwd then
+        local other = different_case .. "/Menu.vue"
+        assert.equals("scp://server1/" .. other:gsub("^/", ""), remote_scp_path(other))
+      end
+    end
     assert.equals(nil, remote_scp_path(cwd .. "/src/secret"))
     assert.equals(nil, remote_scp_path("/src/secret"))
 

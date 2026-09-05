@@ -28,10 +28,31 @@ end
 -- @param absolute_path string
 -- @return string
 local function normalize_local_path(absolute_path)
-  local cwd = vim.loop.cwd()
-  local found, found_end = string.find(absolute_path, cwd, 1, true)
-  if found == 1 then
-    absolute_path = string.sub(absolute_path, found_end + 1)
+  local cwd = vim.fn.getcwd()
+  local trailing_slash = absolute_path:sub(-1) == "/" or (vim.fn.has("win32") == 1 and absolute_path:sub(-1) == "\\")
+  if vim.fn.has("win32") == 1 then
+    cwd = vim.fs.normalize(cwd)
+    absolute_path = vim.fs.normalize(absolute_path)
+  end
+  local compared_path = absolute_path
+  if vim.fn.has("win32") == 1 then
+    cwd = vim.fn.tolower(cwd)
+    compared_path = vim.fn.tolower(compared_path)
+  end
+  if compared_path == cwd then
+    return ""
+  end
+  local prefix = cwd:sub(-1) == "/" and cwd or cwd .. "/"
+  if vim.startswith(compared_path, prefix) then
+    -- Slice the original path so remote filenames keep their case.
+    local prefix_end = 0
+    for _ in prefix:gmatch("/") do
+      prefix_end = assert(absolute_path:find("/", prefix_end + 1, true))
+    end
+    absolute_path = absolute_path:sub(prefix_end + 1)
+  end
+  if trailing_slash and absolute_path:sub(-1) ~= "/" then
+    absolute_path = absolute_path .. "/"
   end
   -- remove leading slash
   return string.gsub(absolute_path, "^/", "")
