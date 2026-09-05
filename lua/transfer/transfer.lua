@@ -29,8 +29,7 @@ end
 -- @return string
 local function normalize_local_path(absolute_path)
   local cwd = vim.fn.getcwd()
-  local trailing_slash = absolute_path:sub(-1) == "/"
-    or (vim.fn.has("win32") == 1 and absolute_path:sub(-1) == "\\")
+  local trailing_slash = absolute_path:sub(-1) == "/" or (vim.fn.has("win32") == 1 and absolute_path:sub(-1) == "\\")
   if vim.fn.has("win32") == 1 then
     cwd = vim.fs.normalize(cwd)
     absolute_path = vim.fs.normalize(absolute_path)
